@@ -146,6 +146,23 @@ public class SecurityConfig {
                                 .sessionManagement((session) -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+                // Form Login 및 Http Basic 비활성화 (API 서버이므로)
+                http
+                                .formLogin((auth) -> auth.disable())
+                                .httpBasic((auth) -> auth.disable());
+
+                // 인증 실패 시 401 에러 반환 (HTML 페이지 리다이렉트 방지)
+                http
+                                .exceptionHandling((exceptions) -> exceptions
+                                                .authenticationEntryPoint((request, response, authException) -> {
+                                                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                                        response.getWriter().write("Unauthorized");
+                                                }));
+
+                http.addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
+
+                http.addFilterBefore(new CustomLogoutFilter(jwtUtil), LogoutFilter.class);
+
                 return http.build();
         }
 }
