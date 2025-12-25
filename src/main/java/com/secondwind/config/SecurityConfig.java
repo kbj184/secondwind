@@ -75,13 +75,19 @@ public class SecurityConfig {
 
                                                                 CorsConfiguration configuration = new CorsConfiguration();
 
-                                                                configuration.setAllowedOrigins(Collections
-                                                                                .singletonList(allowedOrigins));
-                                                                configuration.setAllowedMethods(
-                                                                                Collections.singletonList("*"));
+                                                                if (allowedOrigins != null
+                                                                                && !allowedOrigins.isEmpty()) {
+                                                                        String[] origins = allowedOrigins.split(",");
+                                                                        for (String origin : origins) {
+                                                                                configuration.addAllowedOrigin(
+                                                                                                origin.trim());
+                                                                        }
+                                                                }
+
+                                                                configuration.setAllowedMethods(List.of("GET", "POST",
+                                                                                "PUT", "DELETE", "OPTIONS", "PATCH"));
                                                                 configuration.setAllowCredentials(true);
-                                                                configuration.setAllowedHeaders(
-                                                                                Collections.singletonList("*"));
+                                                                configuration.setAllowedHeaders(List.of("*"));
                                                                 configuration.setMaxAge(3600L);
                                                                 configuration.setExposedHeaders(List.of("Authorization",
                                                                                 "Set-Cookie", "rt"));
