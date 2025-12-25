@@ -19,6 +19,8 @@ public class UserController {
     @PostMapping("/profile")
     public UserDTO updateProfile(@RequestBody UserDTO userDTO) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        System.out.println("UserController: Profile update requested by " + email);
+
         UserAuth userAuth = userRepository.findByEmail(email);
 
         if (userAuth == null) {
