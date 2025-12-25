@@ -44,26 +44,20 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 1. 기존 서버 종료 및 찌꺼기 정리
-          sudo pkill -9 -f java || true
-          sleep 5
-          
-          # 2. 파일 교체 (최단 경로 이용)
-          # scp-action에서 strip_components: 2를 썼으므로 jar는 루트에 있습니다.
+          # 1. 새로운 JAR 파일 교체
           cd /home/ec2-user
-          rm -f app.jar
           mv secondwind-0.0.1-SNAPSHOT.jar app.jar || mv *.jar app.jar || true
           
-          # 3. 새로운 서버 실행 (메모리 128MB~256MB 고정)
-          nohup java -Xms128m -Xmx256m -Dspring.profiles.active=prod \
-            -Dserver.ssl.enabled=false -Dserver.port=8081 \
-            -DDB_URL=${{ secrets.DB_URL }} \
-            -DDB_USERNAME=${{ secrets.DB_USERNAME }} \
-            -DDB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            -DJWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -DNAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }} \
-            -DNAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }} \
-            -DGOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
-            -DGOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
-            -DALLOWED_ORIGINS=https://main.d2f7uw4hiwwlz7.amplifyapp.com \
-            -jar app.jar > nohup.out 2>&1 &
+          # 2. 환경 변수 파일 생성 (서비스가 읽을 수 있도록)
+          echo "DB_URL=${{ secrets.DB_URL }}" > .env.prod
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env.prod
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env.prod
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env.prod
+          echo "NAVER_CLIENT_ID=${{ secrets.NAVER_CLIENT_ID }}" >> .env.prod
+          echo "NAVER_CLIENT_SECRET=${{ secrets.NAVER_CLIENT_SECRET }}" >> .env.prod
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env.prod
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env.prod
+          echo "ALLOWED_ORIGINS=https://main.d2f7uw4hiwwlz7.amplifyapp.com" >> .env.prod
+          
+          # 3. 시스템 서비스 재시작 (가장 가벼운 작업)
+          sudo systemctl restart running
