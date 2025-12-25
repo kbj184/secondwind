@@ -25,6 +25,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import java.util.Collections;
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -161,7 +163,7 @@ public class SecurityConfig {
 
                 http.addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
-                http.addFilterBefore(new CustomLogoutFilter(jwtUtil), LogoutFilter.class);
+                // http.addFilterBefore(new CustomLogoutFilter(jwtUtil), LogoutFilter.class);
 
                 return http.build();
         }
