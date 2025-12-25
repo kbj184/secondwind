@@ -1,7 +1,6 @@
 package com.secondwind.controller;
 
 import com.secondwind.jwt.JWTUtil;
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
