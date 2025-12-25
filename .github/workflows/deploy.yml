@@ -44,16 +44,17 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 1. 기존 프로세스 종료 (에러 무시)
+          # 1. 기존 프로세스 종료 및 대기
           sudo pkill -9 -f java || true
+          sleep 10
           
-          # 2. 파일 정리 및 준비
-          rm -f /home/ec2-user/app.jar.old
-          [ -f /home/ec2-user/app.jar ] && mv /home/ec2-user/app.jar /home/ec2-user/app.jar.old
+          # 2. 파일 정리 및 준비 (에러 발생 시 무시)
+          rm -rf /home/ec2-user/app.jar.old || true
+          [ -f /home/ec2-user/app.jar ] && mv /home/ec2-user/app.jar /home/ec2-user/app.jar.old || true
           mv /home/ec2-user/build/libs/*.jar /home/ec2-user/app.jar
           
-          # 3. 새로운 서버 실행 (메모리 제한 추가)
-          nohup java -Xmx512m -Dspring.profiles.active=prod \
+          # 3. 새로운 서버 실행 (메모리 제한 256MB로 더 강화)
+          nohup java -Xmx256m -Dspring.profiles.active=prod \
             -Dserver.ssl.enabled=false -Dserver.port=8081 \
             -DDB_URL=${{ secrets.DB_URL }} \
             -DDB_USERNAME=${{ secrets.DB_USERNAME }} \
@@ -66,6 +67,6 @@ jobs:
             -DALLOWED_ORIGINS=https://main.d2f7uw4hiwwlz7.amplifyapp.com \
             -jar /home/ec2-user/app.jar > /home/ec2-user/nohup.out 2>&1 &
           
-          # 4. 잠시 대기 후 실행 확인 (선택 사항)
-          sleep 5
-          ps -ef | grep java | grep -v grep
+          # 4. 즉시 퇴보 (Status 0 유도를 위해 즉시 종료)
+          disown
+          exit 0
