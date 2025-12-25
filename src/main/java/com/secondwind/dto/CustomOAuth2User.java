@@ -64,7 +64,18 @@ public class CustomOAuth2User implements OAuth2User, AuthUser {
         return userDTO.getId();
     }
 
+    @Override
     public String getEmail() {
         return userDTO.getEmail();
+    }
+
+    @Override
+    public String getNickname() {
+        return userDTO.getNickname();
+    }
+
+    @Override
+    public String getNicknameImage() {
+        return userDTO.getNicknameImage();
     }
 }

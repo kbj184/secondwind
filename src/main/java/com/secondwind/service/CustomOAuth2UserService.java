@@ -28,15 +28,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2Response oAuth2Response = null;
         if (registrationId.equals("naver")) {
             oAuth2Response = new NaverResponse(oAuth2User.getAttributes());
-        }
-        else if (registrationId.equals("google")) {
+        } else if (registrationId.equals("google")) {
             oAuth2Response = new GoogleResponse(oAuth2User.getAttributes());
-        }
-        else {
+        } else {
             return null;
         }
-        //리소스 서버에서 발급 받은 정보로 사용자를 특정할 아이디값을 만듬
-        String providerId = oAuth2Response.getProvider()+" "+oAuth2Response.getProviderId();
+        // 리소스 서버에서 발급 받은 정보로 사용자를 특정할 아이디값을 만듬
+        String providerId = oAuth2Response.getProvider() + " " + oAuth2Response.getProviderId();
         UserAuth existData = userRepository.findUserAuthsByProviderId(providerId);
         if (existData == null) {
 
@@ -49,7 +47,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userRepository.save(userAuth);
 
             UserDTO userDTO = new UserDTO();
+            userDTO.setId(userAuth.getId());
             userDTO.setProviderId(providerId);
+            userDTO.setEmail(oAuth2Response.getEmail());
             userDTO.setName(oAuth2Response.getName());
             userDTO.setRole("ROLE_USER");
 
@@ -61,7 +61,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userRepository.save(existData);
 
             UserDTO userDTO = new UserDTO();
+            userDTO.setId(existData.getId());
             userDTO.setProviderId(existData.getProviderId());
+            userDTO.setEmail(existData.getEmail());
             userDTO.setName(oAuth2Response.getName());
             userDTO.setRole(existData.getRole());
 

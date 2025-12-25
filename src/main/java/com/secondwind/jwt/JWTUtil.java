@@ -17,9 +17,10 @@ public class JWTUtil {
 
     private SecretKey secretKey;
 
-    public JWTUtil(@Value("${spring.jwt.secret}")String secret) {
+    public JWTUtil(@Value("${spring.jwt.secret}") String secret) {
 
-        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().getAlgorithm());
+        secretKey = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8),
+                Jwts.SIG.HS256.key().build().getAlgorithm());
     }
 
     public Long getId(String token) {
@@ -29,12 +30,18 @@ public class JWTUtil {
 
     public String getProviderId(String token) {
 
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("providerId", String.class);
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("providerId",
+                String.class);
     }
 
     public String getRole(String token) {
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role",
+                String.class);
+    }
 
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("role", String.class);
+    public String getEmail(String token) {
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("email",
+                String.class);
     }
 
     public Boolean isExpired(String token) {
@@ -55,12 +62,13 @@ public class JWTUtil {
 
     }
 
-    public String createJwt(Long id, String providerId, String role, Long expiredMs) {
+    public String createJwt(Long id, String providerId, String email, String role, Long expiredMs) {
         System.out.println("createJwt==============createJwt");
         System.out.println(id);
         return Jwts.builder()
                 .claim("id", id)
                 .claim("providerId", providerId)
+                .claim("email", email)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiredMs))
@@ -70,7 +78,8 @@ public class JWTUtil {
 
     public String getCategory(String token) {
 
-        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("category", String.class);
+        return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload().get("category",
+                String.class);
     }
 
     public ResponseCookie createCookie(String key, String value) {
@@ -80,20 +89,22 @@ public class JWTUtil {
                 .secure(true)
                 .path("/")
                 .sameSite("None")
-                .domain("localhost")
+                // .domain("localhost")
                 .maxAge(60 * 60 * 60)
                 .build();
     }
 
-/*    public Cookie createCookie(String key, String value) {
-
-        Cookie cookie = new Cookie(key, value);
-        cookie.setMaxAge(60*60*60);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-
-        return cookie;
-    }*/
+    /*
+     * public Cookie createCookie(String key, String value) {
+     * 
+     * Cookie cookie = new Cookie(key, value);
+     * cookie.setMaxAge(60*60*60);
+     * cookie.setSecure(true);
+     * cookie.setPath("/");
+     * cookie.setHttpOnly(true);
+     * 
+     * return cookie;
+     * }
+     */
 
 }

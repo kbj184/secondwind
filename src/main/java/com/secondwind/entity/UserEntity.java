@@ -21,5 +21,8 @@ public class UserEntity {
 
     private String email;
 
+    private String nickname;
+    private String nicknameImage;
+
     private String role;
 }

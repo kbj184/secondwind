@@ -2,6 +2,7 @@ package com.secondwind.oauth2;
 
 import com.secondwind.dto.CustomOAuth2User;
 import com.secondwind.dto.CustomUserDetail;
+import com.secondwind.jwt.AuthUser;
 import com.secondwind.jwt.JWTUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,7 +30,8 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws IOException, ServletException {
 
         Object principal = authentication.getPrincipal();
 
@@ -37,50 +39,55 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         Long id;
         if (principal instanceof CustomUserDetail user) {
             providerId = user.getProviderId(); // 일반 로그인
-            id=user.getId();
+            id = user.getId();
         } else if (principal instanceof CustomOAuth2User oauth) {
             providerId = oauth.getProviderId(); // OAuth
-            id=oauth.getId();
+            id = oauth.getId();
         } else {
             throw new IllegalStateException("Unknown principal type");
         }
 
-        //OAuth2User
-        //CustomOAuth2User customUserDetails = (CustomOAuth2User) authentication.getPrincipal();
-        //String providerId = customUserDetails.getProviderId();
+        // OAuth2User
+        // CustomOAuth2User customUserDetails = (CustomOAuth2User)
+        // authentication.getPrincipal();
+        // String providerId = customUserDetails.getProviderId();
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         Iterator<? extends GrantedAuthority> iterator = authorities.iterator();
         GrantedAuthority auth = iterator.next();
         String role = auth.getAuthority();
+        String email;
+        if (principal instanceof AuthUser user) {
+            email = user.getEmail();
+        } else {
+            email = null;
+        }
 
-        System.out.println("22222222222id:"+id);
-        //String token = jwtUtil.createJwt("access",username, role, 60*60*60L);
-       //토큰 생성
-       //String access = jwtUtil.createJwt("access", username, role, 600000L);
-       String refresh = jwtUtil.createJwt( id,providerId, role, 86400000L);
-        System.out.println("22222222222id:"+refresh);
-        //response.setHeader("access", access);
-        //response.addCookie(createCookie("refresh", refresh));
-        //response.setStatus(HttpStatus.OK.value());
-        //response.addCookie(createCookie("Authorization", token));
-        //response.addCookie(jwtUtil.createCookie("__Host-at", access));
-        //response.addCookie(jwtUtil.createCookie("__Host-rt", refresh));
+        System.out.println("22222222222id:" + id);
+        // String token = jwtUtil.createJwt("access",username, role, 60*60*60L);
+        // 토큰 생성
+        // String access = jwtUtil.createJwt("access", username, role, 600000L);
+        String refresh = jwtUtil.createJwt(id, providerId, email, role, 86400000L);
+        System.out.println("22222222222id:" + refresh);
+        // response.setHeader("access", access);
+        // response.addCookie(createCookie("refresh", refresh));
+        // response.setStatus(HttpStatus.OK.value());
+        // response.addCookie(createCookie("Authorization", token));
+        // response.addCookie(jwtUtil.createCookie("__Host-at", access));
+        // response.addCookie(jwtUtil.createCookie("__Host-rt", refresh));
         response.addHeader("Set-Cookie",
-        //        jwtUtil.createCookie("__Host-rt", refresh).toString());
-        jwtUtil.createCookie("rt", refresh).toString());
-
-
-
-
+                // jwtUtil.createCookie("__Host-rt", refresh).toString());
+                jwtUtil.createCookie("rt", refresh).toString());
 
         // ✅ OAuth만 redirect
         if (principal instanceof CustomOAuth2User) {
-            System.out.println("go refresh token1");
-            //response.sendRedirect(allowedOrigins+"/refresh/token");
+            System.out.println("OAuth Login Success: Redirecting to " + allowedOrigins);
+            System.out.println("Principal: " + principal);
+            System.out.println("ID: " + id);
+            System.out.println("Email: " + email);
             response.sendRedirect(allowedOrigins);
         } else {
-            System.out.println("go refresh token2");
+            System.out.println("Local Login Success");
             response.setStatus(HttpServletResponse.SC_OK);
         }
 

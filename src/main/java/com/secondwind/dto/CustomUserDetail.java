@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-
 public class CustomUserDetail implements UserDetails, AuthUser {
 
     private final UserAuth userAuth;
@@ -75,7 +74,18 @@ public class CustomUserDetail implements UserDetails, AuthUser {
         return UserDetails.super.isEnabled();
     }
 
+    @Override
     public String getEmail() {
         return userAuth.getEmail();
+    }
+
+    @Override
+    public String getNickname() {
+        return userAuth.getNickname();
+    }
+
+    @Override
+    public String getNicknameImage() {
+        return userAuth.getNicknameImage();
     }
 }

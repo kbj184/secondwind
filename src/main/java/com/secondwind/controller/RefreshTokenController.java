@@ -22,7 +22,7 @@ public class RefreshTokenController {
     @PostMapping("/refresh/token")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response) {
 
-        //get refresh token
+        // get refresh token
         String refresh = null;
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
@@ -31,7 +31,7 @@ public class RefreshTokenController {
         }
         for (Cookie cookie : cookies) {
 
-            //if (cookie.getName().equals("__Host-rt")) {
+            // if (cookie.getName().equals("__Host-rt")) {
             if (cookie.getName().equals("rt")) {
 
                 refresh = cookie.getValue();
@@ -40,56 +40,57 @@ public class RefreshTokenController {
 
         if (refresh == null) {
             System.out.println("make new JWT1");
-            //response status code
+            // response status code
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .build();
-            //return new ResponseEntity<>("refresh token null", HttpStatus.UNAUTHORIZED);
+            // return new ResponseEntity<>("refresh token null", HttpStatus.UNAUTHORIZED);
         }
 
-        //expired check
+        // expired check
         try {
             System.out.println("make new JWT2");
-            jwtUtil.isExpired(refresh);
-        } catch (ExpiredJwtException e) {
-
-            //response status code
+            if (jwtUtil.isExpired(refresh)) {
+                return ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .build();
+            }
+        } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .build();
-            //return new ResponseEntity<>("refresh token expired", HttpStatus.BAD_REQUEST);
         }
 
-//        // 토큰이 refresh인지 확인 (발급시 페이로드에 명시)
-//        String category = jwtUtil.getCategory(refresh);
-//
-//        if (!category.equals("refresh")) {
-//
-//            //response status code
-//            return ResponseEntity
-//                    .status(HttpStatus.UNAUTHORIZED)
-//                    .build();
-//            //return new ResponseEntity<>("invalid refresh token", HttpStatus.BAD_REQUEST);
-//        }
+        // // 토큰이 refresh인지 확인 (발급시 페이로드에 명시)
+        // String category = jwtUtil.getCategory(refresh);
+        //
+        // if (!category.equals("refresh")) {
+        //
+        // //response status code
+        // return ResponseEntity
+        // .status(HttpStatus.UNAUTHORIZED)
+        // .build();
+        // //return new ResponseEntity<>("invalid refresh token",
+        // HttpStatus.BAD_REQUEST);
+        // }
 
-        Long id=jwtUtil.getId(refresh);
+        Long id = jwtUtil.getId(refresh);
         String poviderId = jwtUtil.getProviderId(refresh);
         String role = jwtUtil.getRole(refresh);
-        System.out.println("make new JWT="+id);
-        System.out.println("make new JWT="+poviderId);
-        System.out.println("make new JWT="+role);
-        //make new JWT
-        String newAccess = jwtUtil.createJwt( id,poviderId, role, 600000L);
-        String newRefresh = jwtUtil.createJwt( id,poviderId, role, 86400000L);
-        //response
-        //response.setHeader("access", newAccess);
+        String email = jwtUtil.getEmail(refresh); // Extract email
+        System.out.println("make new JWT=" + id);
+        System.out.println("make new JWT=" + poviderId);
+        System.out.println("make new JWT=" + role);
+        // make new JWT
+        String newAccess = jwtUtil.createJwt(id, poviderId, email, role, 600000L);
+        String newRefresh = jwtUtil.createJwt(id, poviderId, email, role, 86400000L);
+        // response
+        // response.setHeader("access", newAccess);
         response.addHeader("Authorization", "Bearer " + newAccess);
-        //response.addCookie(jwtUtil.createCookie("__Host-rt", newRefresh));
+        // response.addCookie(jwtUtil.createCookie("__Host-rt", newRefresh));
         response.addHeader("Set-Cookie",
-                //jwtUtil.createCookie("__Host-rt", newRefresh).toString());
+                // jwtUtil.createCookie("__Host-rt", newRefresh).toString());
                 jwtUtil.createCookie("rt", newRefresh).toString());
-
-
 
         return new ResponseEntity<Void>(HttpStatus.OK);
     }

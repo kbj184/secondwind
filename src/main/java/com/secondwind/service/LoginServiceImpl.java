@@ -24,9 +24,9 @@ public class LoginServiceImpl implements LoginService {
         String email = userDTO.getEmail();
         String password = userDTO.getPassword();
 
-        boolean isExt= userRepository.existsByEmail(email);
+        boolean isExt = userRepository.existsByEmail(email);
 
-        if(isExt){
+        if (isExt) {
             return false;
         }
 
@@ -34,6 +34,7 @@ public class LoginServiceImpl implements LoginService {
         userAuth.setEmail(email);
         userAuth.setPassword(bCryptPasswordEncoder.encode(password));
         userAuth.setAuthProvider("local");
+        userAuth.setRole("ROLE_USER");
         userRepository.save(userAuth);
 
         return true;

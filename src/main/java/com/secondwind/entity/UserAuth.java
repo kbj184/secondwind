@@ -19,4 +19,6 @@ public class UserAuth {
     private String email;
     private String password;
     private String role;
+    private String nickname;
+    private String nicknameImage;
 }
