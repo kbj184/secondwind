@@ -89,7 +89,6 @@ public class JWTUtil {
                 .secure(true)
                 .path("/")
                 .sameSite("None")
-                // .domain("localhost")
                 .maxAge(60 * 60 * 60)
                 .build();
     }

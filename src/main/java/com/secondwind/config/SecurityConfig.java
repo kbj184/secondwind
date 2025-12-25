@@ -128,6 +128,8 @@ public class SecurityConfig {
                 // 경로별 인가 작업
                 http
                                 .authorizeHttpRequests((auth) -> auth
+                                                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
                                                 .requestMatchers("/", "/refresh/token", "/emailcheck", "/join",
                                                                 "/login")
                                                 .permitAll()
