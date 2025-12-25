@@ -44,8 +44,15 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          sudo pkill -f java || true
-          mv /home/ec2-user/*.jar /home/ec2-user/app.jar
+          # 1. 기존 프로세스 종료 (에러 무시)
+          sudo pkill -9 -f java || true
+          
+          # 2. 파일 정리 및 준비
+          rm -f /home/ec2-user/app.jar.old
+          [ -f /home/ec2-user/app.jar ] && mv /home/ec2-user/app.jar /home/ec2-user/app.jar.old
+          mv /home/ec2-user/build/libs/*.jar /home/ec2-user/app.jar
+          
+          # 3. 새로운 서버 실행 (로그 분리 및 안전한 실행)
           nohup java -Dspring.profiles.active=prod \
             -Dserver.ssl.enabled=false -Dserver.port=8081 \
             -DDB_URL=${{ secrets.DB_URL }} \
@@ -58,3 +65,7 @@ jobs:
             -DGOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
             -DALLOWED_ORIGINS=https://main.d2f7uw4hiwwlz7.amplifyapp.com \
             -jar /home/ec2-user/app.jar > /home/ec2-user/nohup.out 2>&1 &
+          
+          # 4. 잠시 대기 후 실행 확인 (선택 사항)
+          sleep 5
+          ps -ef | grep java | grep -v grep
