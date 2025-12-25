@@ -29,102 +29,115 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${secondwind.allowed-origins}")
-    private String allowedOrigins;
+        @Value("${secondwind.allowed-origins}")
+        private String allowedOrigins;
 
-    private final CustomOAuth2UserService customOAuth2UserService;
-    private final CustomSuccessHandler customSuccessHandler;
-    private final JWTUtil jwtUtil;
+        private final CustomOAuth2UserService customOAuth2UserService;
+        private final CustomSuccessHandler customSuccessHandler;
+        private final JWTUtil jwtUtil;
 
-    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService, CustomSuccessHandler customSuccessHandler, JWTUtil jwtUtil) {
-        this.customOAuth2UserService = customOAuth2UserService;
-        this.customSuccessHandler = customSuccessHandler;
-        this.jwtUtil = jwtUtil;
-    }
+        public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
+                        CustomSuccessHandler customSuccessHandler, JWTUtil jwtUtil) {
+                this.customOAuth2UserService = customOAuth2UserService;
+                this.customSuccessHandler = customSuccessHandler;
+                this.jwtUtil = jwtUtil;
+        }
 
-    @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public BCryptPasswordEncoder bCryptPasswordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+                        throws Exception {
+                return authenticationConfiguration.getAuthenticationManager();
+        }
 
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager)
+                        throws Exception {
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+                /*
+                 * http
+                 * .requiresChannel(channel ->
+                 * channel.anyRequest().requiresSecure()
+                 * );
+                 */
 
-        http
-                .requiresChannel(channel ->
-                        channel.anyRequest().requiresSecure()
-                );
+                http
+                                .cors(corsCustomizer -> corsCustomizer
+                                                .configurationSource(new CorsConfigurationSource() {
 
-        http
-                .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
+                                                        @Override
+                                                        public CorsConfiguration getCorsConfiguration(
+                                                                        HttpServletRequest request) {
 
-                    @Override
-                    public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                                                                CorsConfiguration configuration = new CorsConfiguration();
 
-                        CorsConfiguration configuration = new CorsConfiguration();
+                                                                configuration.setAllowedOrigins(Collections
+                                                                                .singletonList(allowedOrigins));
+                                                                configuration.setAllowedMethods(
+                                                                                Collections.singletonList("*"));
+                                                                configuration.setAllowCredentials(true);
+                                                                configuration.setAllowedHeaders(
+                                                                                Collections.singletonList("*"));
+                                                                configuration.setMaxAge(3600L);
+                                                                configuration.setExposedHeaders(List.of("Authorization",
+                                                                                "Set-Cookie", "rt"));
+                                                                // configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+                                                                // configuration.setExposedHeaders(Collections.singletonList("Set-Cookie"));
+                                                                // configuration.setExposedHeaders(Collections.singletonList("rt"));
+                                                                // configuration.setExposedHeaders(
+                                                                // List.of("__Host-at", "__Host-rt")
+                                                                // );
 
-                        configuration.setAllowedOrigins(Collections.singletonList(allowedOrigins));
-                        configuration.setAllowedMethods(Collections.singletonList("*"));
-                        configuration.setAllowCredentials(true);
-                        configuration.setAllowedHeaders(Collections.singletonList("*"));
-                        configuration.setMaxAge(3600L);
-                        configuration.setExposedHeaders(List.of("Authorization", "Set-Cookie", "rt"));
-                        //configuration.setExposedHeaders(Collections.singletonList("Authorization"));
-                        //configuration.setExposedHeaders(Collections.singletonList("Set-Cookie"));
-                      //configuration.setExposedHeaders(Collections.singletonList("rt"));
-             //           configuration.setExposedHeaders(
-           //                     List.of("__Host-at", "__Host-rt")
-         //               );
+                                                                return configuration;
+                                                        }
+                                                }));
 
-                        return configuration;
-                    }
-                }));
+                // csrf disable
+                http.csrf(AbstractHttpConfigurer::disable);
 
-        //csrf disable
-        http.csrf(AbstractHttpConfigurer::disable);
+                // From 로그인 방식 disable
+                http.formLogin(AbstractHttpConfigurer::disable);
 
-        //From 로그인 방식 disable
-        http.formLogin(AbstractHttpConfigurer::disable);
+                // HTTP Basic 인증 방식 disable
+                http.httpBasic(AbstractHttpConfigurer::disable);
 
-        //HTTP Basic 인증 방식 disable
-        http.httpBasic(AbstractHttpConfigurer::disable);
+                http
+                                .addFilterAt(
+                                                new LoginFilter(authenticationManager, customSuccessHandler),
+                                                UsernamePasswordAuthenticationFilter.class);
 
-        http
-                .addFilterAt(
-                        new LoginFilter(authenticationManager, customSuccessHandler),
-                        UsernamePasswordAuthenticationFilter.class
-                );
+                // JWTFilter 추가
+                http.addFilterAfter(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
+                // http.addFilterAfter(new JWTFilter(jwtUtil),
+                // OAuth2LoginAuthenticationFilter.class);
 
-        //JWTFilter 추가
-        http.addFilterAfter(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
-        //http.addFilterAfter(new JWTFilter(jwtUtil), OAuth2LoginAuthenticationFilter.class);
+                // http.addFilterAt(new
+                // LoginFilter(authenticationManager(authenticationConfiguration),jwtUtil),
+                // UsernamePasswordAuthenticationFilter.class);
+                // oauth2
+                http
+                                .oauth2Login((oauth2) -> oauth2
+                                                .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
+                                                                .userService(customOAuth2UserService))
+                                                .successHandler(customSuccessHandler));
 
-        //http.addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration),jwtUtil), UsernamePasswordAuthenticationFilter.class);
-        //oauth2
-        http
-                .oauth2Login((oauth2) -> oauth2
-                        .userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
-                                .userService(customOAuth2UserService))
-                        .successHandler(customSuccessHandler));
+                // 경로별 인가 작업
+                http
+                                .authorizeHttpRequests((auth) -> auth
+                                                .requestMatchers("/", "/refresh/token", "/emailcheck", "/join",
+                                                                "/login")
+                                                .permitAll()
+                                                .anyRequest().authenticated());
 
+                // 세션 설정 : STATELESS
+                http
+                                .sessionManagement((session) -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        //경로별 인가 작업
-        http
-                .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/","/refresh/token","/emailcheck","/join","/login").permitAll()
-                        .anyRequest().authenticated());
-
-        //세션 설정 : STATELESS
-        http
-                .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-        return http.build();
-    }
+                return http.build();
+        }
 }
