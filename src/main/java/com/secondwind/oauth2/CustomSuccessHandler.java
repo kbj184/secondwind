@@ -81,11 +81,9 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // ✅ OAuth만 redirect
         if (principal instanceof CustomOAuth2User) {
-            System.out.println("OAuth Login Success: Redirecting to " + allowedOrigins);
-            System.out.println("Principal: " + principal);
-            System.out.println("ID: " + id);
-            System.out.println("Email: " + email);
-            response.sendRedirect(allowedOrigins);
+            String targetUrl = allowedOrigins.split(",")[0].trim();
+            System.out.println("OAuth Login Success: Redirecting to " + targetUrl);
+            response.sendRedirect(targetUrl);
         } else {
             System.out.println("Local Login Success");
             response.setStatus(HttpServletResponse.SC_OK);
