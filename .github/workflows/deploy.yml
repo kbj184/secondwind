@@ -44,17 +44,18 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 1. 기존 프로세스 종료 및 대기
+          # 1. 기존 서버 종료 및 찌꺼기 정리
           sudo pkill -9 -f java || true
-          sleep 10
+          sleep 5
           
-          # 2. 파일 정리 및 준비 (에러 발생 시 무시)
-          rm -rf /home/ec2-user/app.jar.old || true
-          [ -f /home/ec2-user/app.jar ] && mv /home/ec2-user/app.jar /home/ec2-user/app.jar.old || true
-          mv /home/ec2-user/build/libs/*.jar /home/ec2-user/app.jar
+          # 2. 파일 교체 (최단 경로 이용)
+          # scp-action에서 strip_components: 2를 썼으므로 jar는 루트에 있습니다.
+          cd /home/ec2-user
+          rm -f app.jar
+          mv secondwind-0.0.1-SNAPSHOT.jar app.jar || mv *.jar app.jar || true
           
-          # 3. 새로운 서버 실행 (메모리 제한 256MB로 더 강화)
-          nohup java -Xmx256m -Dspring.profiles.active=prod \
+          # 3. 새로운 서버 실행 (메모리 128MB~256MB 고정)
+          nohup java -Xms128m -Xmx256m -Dspring.profiles.active=prod \
             -Dserver.ssl.enabled=false -Dserver.port=8081 \
             -DDB_URL=${{ secrets.DB_URL }} \
             -DDB_USERNAME=${{ secrets.DB_USERNAME }} \
@@ -65,8 +66,4 @@ jobs:
             -DGOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }} \
             -DGOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }} \
             -DALLOWED_ORIGINS=https://main.d2f7uw4hiwwlz7.amplifyapp.com \
-            -jar /home/ec2-user/app.jar > /home/ec2-user/nohup.out 2>&1 &
-          
-          # 4. 즉시 퇴보 (Status 0 유도를 위해 즉시 종료)
-          disown
-          exit 0
+            -jar app.jar > nohup.out 2>&1 &
