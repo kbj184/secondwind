@@ -52,8 +52,8 @@ jobs:
           [ -f /home/ec2-user/app.jar ] && mv /home/ec2-user/app.jar /home/ec2-user/app.jar.old
           mv /home/ec2-user/build/libs/*.jar /home/ec2-user/app.jar
           
-          # 3. 새로운 서버 실행 (로그 분리 및 안전한 실행)
-          nohup java -Dspring.profiles.active=prod \
+          # 3. 새로운 서버 실행 (메모리 제한 추가)
+          nohup java -Xmx512m -Dspring.profiles.active=prod \
             -Dserver.ssl.enabled=false -Dserver.port=8081 \
             -DDB_URL=${{ secrets.DB_URL }} \
             -DDB_USERNAME=${{ secrets.DB_USERNAME }} \
