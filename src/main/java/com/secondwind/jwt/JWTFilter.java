@@ -100,6 +100,8 @@ public class JWTFilter extends OncePerRequestFilter {
         String role = jwtUtil.getRole(token);
         String email = jwtUtil.getEmail(token);
 
+        System.out.println("JWTFilter: Authenticating user " + email + " with role " + role);
+
         // userDTO를 생성하여 값 set
         UserDTO userDTO = new UserDTO();
         userDTO.setId(id);
