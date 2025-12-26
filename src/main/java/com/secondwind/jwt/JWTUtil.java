@@ -82,15 +82,23 @@ public class JWTUtil {
                 String.class);
     }
 
+    @Value("${secondwind.cookie-domain}")
+    private String cookieDomain;
+
     public ResponseCookie createCookie(String key, String value) {
 
-        return ResponseCookie.from(key, value)
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(key, value)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
                 .sameSite("None")
-                .maxAge(60 * 60 * 60)
-                .build();
+                .maxAge(60 * 60 * 60);
+
+        if (cookieDomain != null && !cookieDomain.isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+
+        return builder.build();
     }
 
     /*
