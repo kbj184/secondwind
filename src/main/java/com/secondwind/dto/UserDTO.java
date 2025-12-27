@@ -15,4 +15,9 @@ public class UserDTO {
     private String nickname;
     private String nicknameImage;
     private String password;
+
+    // Crew Info
+    private Long crewId;
+    private String crewName;
+    private String crewImage;
 }
