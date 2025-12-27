@@ -26,6 +26,7 @@ public class CrewController {
     }
 
     @PostMapping
+    @org.springframework.transaction.annotation.Transactional
     public CrewDTO createCrew(@RequestBody CrewDTO crewDTO) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
@@ -38,6 +39,11 @@ public class CrewController {
         var existingCrew = crewRepository.findByCaptainId(userAuth.getId());
         if (existingCrew.isPresent()) {
             throw new RuntimeException("User already has a crew");
+        }
+
+        // Check if user is already a member of any crew
+        if (crewMemberRepository.findByUserId(userAuth.getId()).isPresent()) {
+            throw new RuntimeException("User is already a member of a crew. Leave current crew to create a new one.");
         }
 
         Crew crew = new Crew();

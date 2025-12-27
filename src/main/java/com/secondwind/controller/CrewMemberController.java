@@ -50,6 +50,7 @@ public class CrewMemberController {
     }
 
     @PostMapping("/{crewId}/join")
+    @org.springframework.transaction.annotation.Transactional
     public CrewMemberDTO joinCrew(@PathVariable Long crewId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
@@ -95,6 +96,7 @@ public class CrewMemberController {
     }
 
     @DeleteMapping("/{crewId}/leave")
+    @org.springframework.transaction.annotation.Transactional
     public void leaveCrew(@PathVariable Long crewId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
