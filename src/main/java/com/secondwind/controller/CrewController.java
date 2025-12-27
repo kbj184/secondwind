@@ -92,4 +92,20 @@ public class CrewController {
 
         return response;
     }
+
+    @GetMapping("/all")
+    public java.util.List<CrewDTO> getAllCrews() {
+        java.util.List<Crew> crews = crewRepository.findAll();
+
+        return crews.stream().map(crew -> {
+            CrewDTO dto = new CrewDTO();
+            dto.setId(crew.getId());
+            dto.setName(crew.getName());
+            dto.setDescription(crew.getDescription());
+            dto.setImageUrl(crew.getImageUrl());
+            dto.setCaptainId(crew.getCaptainId());
+            dto.setCreatedAt(crew.getCreatedAt().toString());
+            return dto;
+        }).collect(java.util.stream.Collectors.toList());
+    }
 }
