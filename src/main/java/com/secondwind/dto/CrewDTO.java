@@ -12,4 +12,5 @@ public class CrewDTO {
     private String imageUrl;
     private Long captainId;
     private String createdAt;
+    private long memberCount; // 멤버 수 추가
 }

@@ -68,6 +68,7 @@ public class CrewController {
         response.setImageUrl(savedCrew.getImageUrl());
         response.setCaptainId(savedCrew.getCaptainId());
         response.setCreatedAt(savedCrew.getCreatedAt().toString());
+        response.setMemberCount(1L);
 
         return response;
     }
@@ -95,6 +96,7 @@ public class CrewController {
         response.setImageUrl(foundCrew.getImageUrl());
         response.setCaptainId(foundCrew.getCaptainId());
         response.setCreatedAt(foundCrew.getCreatedAt().toString());
+        response.setMemberCount(crewMemberRepository.countByCrewId(foundCrew.getId()));
 
         return response;
     }
@@ -111,6 +113,7 @@ public class CrewController {
             dto.setImageUrl(crew.getImageUrl());
             dto.setCaptainId(crew.getCaptainId());
             dto.setCreatedAt(crew.getCreatedAt().toString());
+            dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
             return dto;
         }).collect(java.util.stream.Collectors.toList());
     }
