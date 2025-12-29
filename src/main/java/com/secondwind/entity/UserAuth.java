@@ -1,9 +1,6 @@
 package com.secondwind.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,4 +18,8 @@ public class UserAuth {
     private String role;
     private String nickname;
     private String nicknameImage;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "runner_grade")
+    private RunnerGrade runnerGrade = RunnerGrade.BEGINNER;
 }

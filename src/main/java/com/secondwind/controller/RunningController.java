@@ -1,12 +1,16 @@
 package com.secondwind.controller;
 
 import com.secondwind.dto.RunningSessionDTO;
+import com.secondwind.entity.RunnerGrade;
 import com.secondwind.entity.RunningSession;
 import com.secondwind.repository.RunningSessionRepository;
+import com.secondwind.service.RunnerGradeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -14,9 +18,12 @@ import java.util.stream.Collectors;
 public class RunningController {
 
     private final RunningSessionRepository runningSessionRepository;
+    private final RunnerGradeService runnerGradeService;
 
-    public RunningController(RunningSessionRepository runningSessionRepository) {
+    public RunningController(RunningSessionRepository runningSessionRepository,
+            RunnerGradeService runnerGradeService) {
         this.runningSessionRepository = runningSessionRepository;
+        this.runnerGradeService = runnerGradeService;
     }
 
     /**
@@ -65,7 +72,28 @@ public class RunningController {
             System.out.println("   Complete: " + saved.getIsComplete());
             System.out.println("   Created At: " + saved.getCreatedAt());
 
-            return ResponseEntity.ok().body(saved);
+            // 세션 완료 시 등급 자동 승급 체크
+            RunnerGrade upgradedGrade = null;
+            if (dto.getIsComplete() != null && dto.getIsComplete()) {
+                upgradedGrade = runnerGradeService.checkAndUpgradeGrade(
+                        dto.getUserId(),
+                        dto.getDistance(),
+                        dto.getDuration());
+            }
+
+            // 응답에 등급 정보 포함
+            Map<String, Object> response = new HashMap<>();
+            response.put("session", saved);
+            if (upgradedGrade != null) {
+                response.put("gradeUpgraded", true);
+                response.put("newGrade", upgradedGrade.getDisplayName());
+                response.put("gradeLevel", upgradedGrade.getLevel());
+                response.put("gradeDescription", upgradedGrade.getDescription());
+            } else {
+                response.put("gradeUpgraded", false);
+            }
+
+            return ResponseEntity.ok().body(response);
 
         } catch (Exception e) {
             System.err.println("❌ Error syncing running session:");
