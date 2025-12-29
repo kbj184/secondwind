@@ -22,7 +22,7 @@ public class RunningController {
     /**
      * 러닝 세션 동기화 (생성 또는 업데이트)
      */
-    @PostMapping("/sync")
+    @PostMapping("/session/sync")
     public ResponseEntity<?> syncRunningSession(@RequestBody RunningSessionDTO dto) {
         try {
             // 기존 세션 찾기
