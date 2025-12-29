@@ -9,7 +9,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "running_sessions")
+@Table(name = "running_sessions", indexes = {
+        @Index(name = "idx_user_id", columnList = "user_id"),
+        @Index(name = "idx_session_id", columnList = "session_id"),
+        @Index(name = "idx_created_at", columnList = "created_at")
+})
 @Getter
 @Setter
 public class RunningSession {

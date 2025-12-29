@@ -18,6 +18,5 @@ CREATE TABLE IF NOT EXISTS running_sessions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
     INDEX idx_session_id (session_id),
-    INDEX idx_created_at (created_at),
-    FOREIGN KEY (user_id) REFERENCES user_auth(id) ON DELETE CASCADE
+    INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
