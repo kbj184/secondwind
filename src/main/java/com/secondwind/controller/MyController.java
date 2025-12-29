@@ -40,6 +40,13 @@ public class MyController {
         userDTO.setNickname(userAuth.getNickname());
         userDTO.setNicknameImage(userAuth.getNicknameImage());
 
+        // Runner Grade
+        if (userAuth.getRunnerGrade() != null) {
+            userDTO.setRunnerGrade(userAuth.getRunnerGrade().name());
+        } else {
+            userDTO.setRunnerGrade("BEGINNER");
+        }
+
         // Crew Info Logic
         var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
         System.out.println("DEBUG: Finding crew for user ID " + userAuth.getId());

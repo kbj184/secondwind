@@ -20,4 +20,7 @@ public class UserDTO {
     private Long crewId;
     private String crewName;
     private String crewImage;
+
+    // Runner Grade
+    private String runnerGrade;
 }
