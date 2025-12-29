@@ -25,10 +25,21 @@ public class RunningController {
     @PostMapping("/session/sync")
     public ResponseEntity<?> syncRunningSession(@RequestBody RunningSessionDTO dto) {
         try {
+            System.out.println("📥 Sync request received:");
+            System.out.println("   User ID: " + dto.getUserId());
+            System.out.println("   Session ID: " + dto.getSessionId());
+            System.out.println("   Distance: " + dto.getDistance() + "km");
+            System.out.println("   Duration: " + dto.getDuration() + "s");
+            System.out.println("   Is Complete: " + dto.getIsComplete());
+
             // 기존 세션 찾기
             RunningSession session = runningSessionRepository
                     .findBySessionId(dto.getSessionId())
                     .orElse(new RunningSession());
+
+            boolean isNewSession = (session.getId() == null);
+            System.out.println("   " + (isNewSession ? "🆕 Creating new session"
+                    : "♻️ Updating existing session (ID: " + session.getId() + ")"));
 
             // 데이터 업데이트
             session.setUserId(dto.getUserId());
@@ -48,15 +59,35 @@ public class RunningController {
             // 저장
             RunningSession saved = runningSessionRepository.save(session);
 
-            System.out.println("✅ Running session synced: " + saved.getSessionId() +
-                    " (Complete: " + saved.getIsComplete() + ")");
+            System.out.println("✅ Running session saved successfully!");
+            System.out.println("   DB ID: " + saved.getId());
+            System.out.println("   Session ID: " + saved.getSessionId());
+            System.out.println("   Complete: " + saved.getIsComplete());
+            System.out.println("   Created At: " + saved.getCreatedAt());
 
             return ResponseEntity.ok().body(saved);
 
         } catch (Exception e) {
-            System.err.println("❌ Error syncing running session: " + e.getMessage());
+            System.err.println("❌ Error syncing running session:");
+            System.err.println("   Message: " + e.getMessage());
+            System.err.println("   Class: " + e.getClass().getName());
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Sync failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 테스트용 엔드포인트 - DB 연결 및 데이터 확인
+     */
+    @GetMapping("/test/count")
+    public ResponseEntity<?> getSessionCount() {
+        try {
+            long count = runningSessionRepository.count();
+            System.out.println("📊 Total sessions in DB: " + count);
+            return ResponseEntity.ok().body("Total sessions: " + count);
+        } catch (Exception e) {
+            System.err.println("❌ Error counting sessions: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
 
