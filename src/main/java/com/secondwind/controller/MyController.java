@@ -7,7 +7,8 @@ import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.secondwind.service.RunnerGradeService;
+import com.secondwind.entity.RunnerGrade;
 
 @RestController
 public class MyController {
@@ -15,13 +16,16 @@ public class MyController {
     private final UserRepository userRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final CrewRepository crewRepository;
+    private final RunnerGradeService runnerGradeService;
 
     public MyController(UserRepository userRepository,
             CrewMemberRepository crewMemberRepository,
-            CrewRepository crewRepository) {
+            CrewRepository crewRepository,
+            RunnerGradeService runnerGradeService) {
         this.userRepository = userRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
+        this.runnerGradeService = runnerGradeService;
     }
 
     @GetMapping("/my")
@@ -40,12 +44,9 @@ public class MyController {
         userDTO.setNickname(userAuth.getNickname());
         userDTO.setNicknameImage(userAuth.getNicknameImage());
 
-        // Runner Grade
-        if (userAuth.getRunnerGrade() != null) {
-            userDTO.setRunnerGrade(userAuth.getRunnerGrade().name());
-        } else {
-            userDTO.setRunnerGrade("BEGINNER");
-        }
+        // Runner Grade - 실제 기록 기반 재동기화 (데이터 오염 복구)
+        RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade(userAuth.getId());
+        userDTO.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
 
         // Crew Info Logic
         var crewMember = crewMemberRepository.findByUserId(userAuth.getId());

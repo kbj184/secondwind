@@ -110,4 +110,35 @@ public class RunnerGradeService {
                 .max((s1, s2) -> Double.compare(s1.getDistance(), s2.getDistance()))
                 .orElse(null);
     }
+
+    /**
+     * 사용자의 실제 기록을 기반으로 등급을 재계산하고 동기화함 (데이터 정합성 유지용)
+     */
+    @Transactional
+    public RunnerGrade refreshUserGrade(Long userId) {
+        UserAuth user = userRepository.findById(userId).orElse(null);
+        if (user == null)
+            return RunnerGrade.BEGINNER;
+
+        // 실제 최고 기록 조회
+        RunningSession bestSession = getBestRecord(userId);
+
+        RunnerGrade realGrade = RunnerGrade.BEGINNER;
+        if (bestSession != null) {
+            // 최고 기록 기준 등급 계산
+            realGrade = RunnerGrade.calculateGrade(bestSession.getDistance(), bestSession.getDuration());
+        }
+
+        // 현재 등급과 다르면 업데이트 (다운그레이드 포함)
+        // Legend 등급은 관리자 부여이므로 자동 강등에서 제외할 수도 있으나,
+        // 여기서는 데이터 오염 복구가 목적이므로 실제 기록 기준으로 덮어씀 (필요 시 로직 조정 가능)
+        if (user.getRunnerGrade() != realGrade && user.getRunnerGrade() != RunnerGrade.LEGEND_MARATHONER) {
+            System.out.println(
+                    "♻️ Grade Recalculated for user " + userId + ": " + user.getRunnerGrade() + " -> " + realGrade);
+            user.setRunnerGrade(realGrade);
+            userRepository.save(user);
+        }
+
+        return user.getRunnerGrade() != null ? user.getRunnerGrade() : RunnerGrade.BEGINNER;
+    }
 }
