@@ -75,9 +75,18 @@ public class RunningController {
             // 세션 완료 시 등급 자동 승급 체크
             RunnerGrade upgradedGrade = null;
             if (dto.getIsComplete() != null && dto.getIsComplete()) {
+                // 거리 단위 보정 (m -> km)
+                // 만약 거리가 200.0보다 크다면 미터 단위로 간주하고 km로 변환 (일반적인 러닝 범위 고려)
+                double distanceKm = dto.getDistance();
+                if (distanceKm > 200.0) {
+                    distanceKm = distanceKm / 1000.0;
+                    System.out.println(
+                            "⚠️ Distance unit correction applied: " + dto.getDistance() + " -> " + distanceKm + "km");
+                }
+
                 upgradedGrade = runnerGradeService.checkAndUpgradeGrade(
                         dto.getUserId(),
-                        dto.getDistance(),
+                        distanceKm,
                         dto.getDuration());
             }
 
