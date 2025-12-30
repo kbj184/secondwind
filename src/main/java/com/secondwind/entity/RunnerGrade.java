@@ -66,16 +66,20 @@ public enum RunnerGrade {
             if (grade == LEGEND_MARATHONER)
                 continue; // Legend는 스킵
 
-            // 거리 조건 확인
-            if (distance < grade.minDistance)
-                continue;
-            if (distance >= grade.maxDistance)
-                continue;
+            // 거리 조건: minDistance 이상 AND maxDistance 미만
+            if (distance < grade.minDistance) {
+                continue; // 최소 거리 미달
+            }
+            if (distance >= grade.maxDistance) {
+                continue; // 최대 거리 초과
+            }
 
-            // 시간 조건 확인
-            if (grade.maxTime != null && duration > grade.maxTime)
-                continue;
+            // 시간 조건: maxTime 이하 (maxTime이 null이면 시간 제한 없음)
+            if (grade.maxTime != null && duration > grade.maxTime) {
+                continue; // 시간 초과
+            }
 
+            // 모든 조건을 만족하면 해당 등급 반환
             return grade;
         }
 
