@@ -59,7 +59,7 @@ public class RunnerGradeService {
             return achievedGrade;
         }
 
-        return currentGrade;
+        return null; // 승급 없음
     }
 
     /**
