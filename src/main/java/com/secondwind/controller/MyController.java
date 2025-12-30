@@ -7,6 +7,7 @@ import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 import com.secondwind.service.RunnerGradeService;
 import com.secondwind.entity.RunnerGrade;
 
