@@ -67,7 +67,7 @@ public class MyController {
         // Activity Area Status
         var activityArea = activityAreaRepository.findByUserId(userAuth.getId());
         userDTO.setActivityAreaRegistered(activityArea.isPresent());
-        activityArea.ifPresent(area -> userDTO.setActivityAreaDong(area.getAdminLevel3()));
+        activityArea.ifPresent(area -> userDTO.setActivityAreaAddress(area.getAdminLevel2()));
 
         return userDTO;
     }
