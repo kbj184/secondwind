@@ -3,6 +3,10 @@ package com.secondwind.controller;
 import com.secondwind.dto.UserDTO;
 import com.secondwind.entity.UserAuth;
 import com.secondwind.repository.UserRepository;
+import com.secondwind.repository.CrewMemberRepository;
+import com.secondwind.repository.CrewRepository;
+import com.secondwind.service.RunnerGradeService;
+import com.secondwind.entity.RunnerGrade;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,9 +15,18 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final CrewMemberRepository crewMemberRepository;
+    private final CrewRepository crewRepository;
+    private final RunnerGradeService runnerGradeService;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository,
+            CrewMemberRepository crewMemberRepository,
+            CrewRepository crewRepository,
+            RunnerGradeService runnerGradeService) {
         this.userRepository = userRepository;
+        this.crewMemberRepository = crewMemberRepository;
+        this.crewRepository = crewRepository;
+        this.runnerGradeService = runnerGradeService;
     }
 
     @PostMapping("/profile")
@@ -35,12 +48,28 @@ public class UserController {
         userAuth.setNicknameImage(userDTO.getNicknameImage());
         userRepository.save(userAuth);
 
+        // 전체 사용자 정보 반환 (MyController와 동일)
         UserDTO response = new UserDTO();
         response.setId(userAuth.getId());
         response.setEmail(userAuth.getEmail());
         response.setNickname(userAuth.getNickname());
         response.setNicknameImage(userAuth.getNicknameImage());
         response.setRole(userAuth.getRole());
+
+        // Runner Grade
+        RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade(userAuth.getId());
+        response.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
+
+        // Crew Info
+        var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
+        if (crewMember.isPresent()) {
+            var crew = crewRepository.findById(crewMember.get().getCrewId());
+            if (crew.isPresent()) {
+                response.setCrewId(crew.get().getId());
+                response.setCrewName(crew.get().getName());
+                response.setCrewImage(crew.get().getImageUrl());
+            }
+        }
 
         return response;
     }
