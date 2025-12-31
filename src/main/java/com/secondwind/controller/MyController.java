@@ -5,6 +5,7 @@ import com.secondwind.entity.UserAuth;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
+import com.secondwind.repository.UserActivityAreaRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,15 +19,18 @@ public class MyController {
     private final CrewMemberRepository crewMemberRepository;
     private final CrewRepository crewRepository;
     private final RunnerGradeService runnerGradeService;
+    private final UserActivityAreaRepository activityAreaRepository;
 
     public MyController(UserRepository userRepository,
             CrewMemberRepository crewMemberRepository,
             CrewRepository crewRepository,
-            RunnerGradeService runnerGradeService) {
+            RunnerGradeService runnerGradeService,
+            UserActivityAreaRepository activityAreaRepository) {
         this.userRepository = userRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
         this.runnerGradeService = runnerGradeService;
+        this.activityAreaRepository = activityAreaRepository;
     }
 
     @GetMapping("/my")
@@ -51,22 +55,17 @@ public class MyController {
 
         // Crew Info Logic
         var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
-        System.out.println("DEBUG: Finding crew for user ID " + userAuth.getId());
-
         if (crewMember.isPresent()) {
-            System.out.println("DEBUG: Found crew member record. Crew ID: " + crewMember.get().getCrewId());
             var crew = crewRepository.findById(crewMember.get().getCrewId());
             if (crew.isPresent()) {
-                System.out.println("DEBUG: Found crew details. Name: " + crew.get().getName());
                 userDTO.setCrewId(crew.get().getId());
                 userDTO.setCrewName(crew.get().getName());
                 userDTO.setCrewImage(crew.get().getImageUrl());
-            } else {
-                System.out.println("DEBUG: Crew found but details missing for ID " + crewMember.get().getCrewId());
             }
-        } else {
-            System.out.println("DEBUG: No crew member record found for user.");
         }
+
+        // Activity Area Status
+        userDTO.setActivityAreaRegistered(activityAreaRepository.findByUserId(userAuth.getId()).isPresent());
 
         return userDTO;
     }

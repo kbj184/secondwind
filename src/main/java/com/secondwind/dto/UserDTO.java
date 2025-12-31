@@ -23,4 +23,7 @@ public class UserDTO {
 
     // Runner Grade
     private String runnerGrade;
+
+    // Activity Area Status
+    private boolean activityAreaRegistered;
 }

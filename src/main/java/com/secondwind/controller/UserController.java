@@ -7,6 +7,7 @@ import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
 import com.secondwind.service.RunnerGradeService;
 import com.secondwind.entity.RunnerGrade;
+import com.secondwind.repository.UserActivityAreaRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,15 +19,18 @@ public class UserController {
     private final CrewMemberRepository crewMemberRepository;
     private final CrewRepository crewRepository;
     private final RunnerGradeService runnerGradeService;
+    private final UserActivityAreaRepository activityAreaRepository;
 
     public UserController(UserRepository userRepository,
             CrewMemberRepository crewMemberRepository,
             CrewRepository crewRepository,
-            RunnerGradeService runnerGradeService) {
+            RunnerGradeService runnerGradeService,
+            UserActivityAreaRepository activityAreaRepository) {
         this.userRepository = userRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
         this.runnerGradeService = runnerGradeService;
+        this.activityAreaRepository = activityAreaRepository;
     }
 
     @PostMapping("/profile")
@@ -70,6 +74,9 @@ public class UserController {
                 response.setCrewImage(crew.get().getImageUrl());
             }
         }
+
+        // Activity Area Status
+        response.setActivityAreaRegistered(activityAreaRepository.findByUserId(userAuth.getId()).isPresent());
 
         return response;
     }
