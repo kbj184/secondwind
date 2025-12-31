@@ -26,4 +26,5 @@ public class UserDTO {
 
     // Activity Area Status
     private boolean activityAreaRegistered;
+    private String activityAreaDong;
 }
