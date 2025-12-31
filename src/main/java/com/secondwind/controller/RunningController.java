@@ -234,6 +234,16 @@ public class RunningController {
         dto.setWateringSegments(session.getWateringSegments());
         dto.setSplits(session.getSplits());
         dto.setIsComplete(session.getIsComplete());
+        dto.setThumbnail(session.getThumbnail());
+
+        // createdAt을 timestamp(epoch milliseconds)로 변환
+        if (session.getCreatedAt() != null) {
+            dto.setTimestamp(session.getCreatedAt()
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli());
+        }
+
         return dto;
     }
 }

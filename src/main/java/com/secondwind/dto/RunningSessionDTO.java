@@ -18,4 +18,6 @@ public class RunningSessionDTO {
     private String wateringSegments;
     private String splits;
     private Boolean isComplete;
+    private Long timestamp; // 타임스탬프 추가
+    private String thumbnail; // 썸네일 URL 추가
 }

@@ -61,6 +61,9 @@ public class RunningSession {
     @Column(name = "is_complete")
     private Boolean isComplete;
 
+    @Column(name = "thumbnail", columnDefinition = "TEXT")
+    private String thumbnail;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
