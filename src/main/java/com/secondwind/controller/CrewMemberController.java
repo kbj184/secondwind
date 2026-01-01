@@ -65,17 +65,13 @@ public class CrewMemberController {
             throw new RuntimeException("Crew not found");
         }
 
-        // Check if already a member
+        // Check if already a member of THIS crew
         var existingMember = crewMemberRepository.findByCrewIdAndUserId(crewId, userAuth.getId());
         if (existingMember.isPresent()) {
             throw new RuntimeException("Already a member of this crew");
         }
 
-        // Check if user is already in another crew
-        var userCrew = crewMemberRepository.findByUserId(userAuth.getId());
-        if (userCrew.isPresent()) {
-            throw new RuntimeException("Already a member of another crew");
-        }
+        // 중복 크루 가입 허용 - 다른 크루 체크 제거
 
         CrewMember member = new CrewMember();
         member.setCrewId(crewId);
