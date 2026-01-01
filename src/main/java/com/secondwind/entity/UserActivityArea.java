@@ -21,6 +21,9 @@ public class UserActivityArea {
     private String adminLevel2;
     private String adminLevel3;
 
+    @Column(length = 500)
+    private String adminLevelFull; // 전체 주소
+
     private Double latitude;
     private Double longitude;
 }

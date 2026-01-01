@@ -42,6 +42,7 @@ public class UserActivityAreaController {
         activityArea.setAdminLevel1(dto.getAdminLevel1());
         activityArea.setAdminLevel2(dto.getAdminLevel2());
         activityArea.setAdminLevel3(dto.getAdminLevel3());
+        activityArea.setAdminLevelFull(dto.getAdminLevelFull());
         activityArea.setLatitude(dto.getLatitude());
         activityArea.setLongitude(dto.getLongitude());
 
