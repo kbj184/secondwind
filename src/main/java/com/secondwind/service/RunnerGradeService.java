@@ -5,6 +5,7 @@ import com.secondwind.entity.RunningSession;
 import com.secondwind.entity.UserAuth;
 import com.secondwind.repository.RunningSessionRepository;
 import com.secondwind.repository.UserRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +27,7 @@ public class RunnerGradeService {
      * 러닝 세션 완료 후 등급 자동 승급 체크
      */
     @Transactional
-    public RunnerGrade checkAndUpgradeGrade(Long userId, double distance, int duration) {
+    public RunnerGrade checkAndUpgradeGrade(@NonNull Long userId, double distance, int duration) {
         UserAuth user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             System.err.println("❌ User not found: " + userId);
@@ -65,7 +66,7 @@ public class RunnerGradeService {
     /**
      * 사용자의 현재 등급 조회
      */
-    public RunnerGrade getUserGrade(Long userId) {
+    public RunnerGrade getUserGrade(@NonNull Long userId) {
         UserAuth user = userRepository.findById(userId).orElse(null);
         if (user == null)
             return RunnerGrade.BEGINNER;
@@ -78,7 +79,7 @@ public class RunnerGradeService {
      * 관리자 전용: 사용자 등급 수동 설정
      */
     @Transactional
-    public boolean setUserGrade(Long userId, RunnerGrade grade) {
+    public boolean setUserGrade(@NonNull Long userId, RunnerGrade grade) {
         UserAuth user = userRepository.findById(userId).orElse(null);
         if (user == null)
             return false;
@@ -115,7 +116,7 @@ public class RunnerGradeService {
      * 사용자의 실제 기록을 기반으로 등급을 재계산하고 동기화함 (데이터 정합성 유지용)
      */
     @Transactional
-    public RunnerGrade refreshUserGrade(Long userId) {
+    public RunnerGrade refreshUserGrade(@NonNull Long userId) {
         UserAuth user = userRepository.findById(userId).orElse(null);
         if (user == null)
             return RunnerGrade.BEGINNER;

@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -77,7 +76,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // response.addCookie(jwtUtil.createCookie("__Host-rt", refresh));
         response.addHeader("Set-Cookie",
                 // jwtUtil.createCookie("__Host-rt", refresh).toString());
-                jwtUtil.createCookie("rt", refresh).toString());
+                jwtUtil.createCookie("rt", refresh != null ? refresh : "").toString());
 
         // ✅ OAuth만 redirect
         if (principal instanceof CustomOAuth2User) {

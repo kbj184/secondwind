@@ -4,7 +4,6 @@ import com.secondwind.entity.UserAuth;
 import com.secondwind.jwt.AuthUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Collection;

@@ -61,17 +61,25 @@ public class UserController {
         response.setRole(userAuth.getRole());
 
         // Runner Grade
-        RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade(userAuth.getId());
-        response.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
+        Long userId = userAuth.getId();
+        if (userId != null) {
+            RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade((long) userId);
+            response.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
+        } else {
+            response.setRunnerGrade("BEGINNER");
+        }
 
         // Crew Info
         var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
         if (crewMember.isPresent()) {
-            var crew = crewRepository.findById(crewMember.get().getCrewId());
-            if (crew.isPresent()) {
-                response.setCrewId(crew.get().getId());
-                response.setCrewName(crew.get().getName());
-                response.setCrewImage(crew.get().getImageUrl());
+            Long crewId = crewMember.get().getCrewId();
+            if (crewId != null) {
+                var crew = crewRepository.findById(crewId);
+                if (crew.isPresent()) {
+                    response.setCrewId(crew.get().getId());
+                    response.setCrewName(crew.get().getName());
+                    response.setCrewImage(crew.get().getImageUrl());
+                }
             }
         }
 

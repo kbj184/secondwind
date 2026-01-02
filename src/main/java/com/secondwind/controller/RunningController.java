@@ -84,10 +84,12 @@ public class RunningController {
                             "⚠️ Distance unit correction applied: " + dto.getDistance() + " -> " + distanceKm + "km");
                 }
 
-                upgradedGrade = runnerGradeService.checkAndUpgradeGrade(
-                        dto.getUserId(),
-                        distanceKm,
-                        dto.getDuration());
+                if (dto.getUserId() != null) {
+                    upgradedGrade = runnerGradeService.checkAndUpgradeGrade(
+                            (long) dto.getUserId(),
+                            distanceKm,
+                            dto.getDuration());
+                }
             }
 
             // 응답에 등급 정보 포함

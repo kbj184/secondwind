@@ -32,7 +32,8 @@ public class CrewMemberController {
         List<CrewMember> members = crewMemberRepository.findByCrewId(crewId);
 
         return members.stream().map(member -> {
-            var user = userRepository.findById(member.getUserId()).orElse(null);
+            Long userId = member.getUserId();
+            var user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
             CrewMemberDTO dto = new CrewMemberDTO();
             dto.setId(member.getId());
@@ -60,6 +61,9 @@ public class CrewMemberController {
         }
 
         // Check if crew exists
+        if (crewId == null) {
+            throw new RuntimeException("Invalid Crew ID");
+        }
         var crew = crewRepository.findById(crewId);
         if (crew.isEmpty()) {
             throw new RuntimeException("Crew not found");
@@ -111,6 +115,8 @@ public class CrewMemberController {
             throw new RuntimeException("Captain cannot leave the crew");
         }
 
-        crewMemberRepository.delete(member.get());
+        @SuppressWarnings("null")
+        CrewMember memberEntity = member.get();
+        crewMemberRepository.delete(memberEntity);
     }
 }

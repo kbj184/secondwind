@@ -1,5 +1,6 @@
 package com.secondwind.config;
 
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -12,10 +13,13 @@ public class CorsMvcConfig implements WebMvcConfigurer {
     private String allowedOrigins;
 
     @Override
-    public void addCorsMappings(CorsRegistry corsRegistry) {
-
-        corsRegistry.addMapping("/**")
-                .exposedHeaders("Set-Cookie")
-                .allowedOrigins(allowedOrigins.split(","));
+    @SuppressWarnings("null")
+    public void addCorsMappings(@NonNull CorsRegistry corsRegistry) {
+        if (allowedOrigins != null) {
+            String[] origins = allowedOrigins.split(",");
+            corsRegistry.addMapping("/**")
+                    .exposedHeaders("Set-Cookie")
+                    .allowedOrigins(origins);
+        }
     }
 }

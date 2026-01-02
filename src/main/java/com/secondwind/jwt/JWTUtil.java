@@ -2,7 +2,7 @@ package com.secondwind.jwt;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import jakarta.servlet.http.Cookie;
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -85,7 +85,7 @@ public class JWTUtil {
     @Value("${secondwind.cookie-domain}")
     private String cookieDomain;
 
-    public ResponseCookie createCookie(String key, String value) {
+    public ResponseCookie createCookie(@NonNull String key, @NonNull String value) {
 
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(key, value)
                 .httpOnly(true)

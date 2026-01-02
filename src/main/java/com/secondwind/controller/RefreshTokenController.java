@@ -89,7 +89,7 @@ public class RefreshTokenController {
         // response.addCookie(jwtUtil.createCookie("__Host-rt", newRefresh));
         response.addHeader("Set-Cookie",
                 // jwtUtil.createCookie("__Host-rt", newRefresh).toString());
-                jwtUtil.createCookie("rt", newRefresh).toString());
+                jwtUtil.createCookie("rt", newRefresh != null ? newRefresh : "").toString());
 
         return new ResponseEntity<Void>(HttpStatus.OK);
     }

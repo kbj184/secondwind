@@ -50,17 +50,26 @@ public class MyController {
         userDTO.setNicknameImage(userAuth.getNicknameImage());
 
         // Runner Grade - 실제 기록 기반 재동기화 (데이터 오염 복구)
-        RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade(userAuth.getId());
-        userDTO.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
+        Long idObj = userAuth.getId();
+        if (idObj != null) {
+            long userId = idObj;
+            RunnerGrade correctedGrade = runnerGradeService.refreshUserGrade(userId);
+            userDTO.setRunnerGrade(correctedGrade != null ? correctedGrade.name() : "BEGINNER");
+        } else {
+            userDTO.setRunnerGrade("BEGINNER");
+        }
 
         // Crew Info Logic
         var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
         if (crewMember.isPresent()) {
-            var crew = crewRepository.findById(crewMember.get().getCrewId());
-            if (crew.isPresent()) {
-                userDTO.setCrewId(crew.get().getId());
-                userDTO.setCrewName(crew.get().getName());
-                userDTO.setCrewImage(crew.get().getImageUrl());
+            Long crewId = crewMember.get().getCrewId();
+            if (crewId != null) {
+                var crew = crewRepository.findById(crewId);
+                if (crew.isPresent()) {
+                    userDTO.setCrewId(crew.get().getId());
+                    userDTO.setCrewName(crew.get().getName());
+                    userDTO.setCrewImage(crew.get().getImageUrl());
+                }
             }
         }
 
