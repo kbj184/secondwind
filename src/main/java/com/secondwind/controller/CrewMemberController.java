@@ -105,18 +105,14 @@ public class CrewMemberController {
             throw new RuntimeException("User not found");
         }
 
-        var member = crewMemberRepository.findByCrewIdAndUserId(crewId, userAuth.getId());
-        if (member.isEmpty()) {
-            throw new RuntimeException("Not a member of this crew");
-        }
+        CrewMember memberEntity = crewMemberRepository.findByCrewIdAndUserId(crewId, userAuth.getId())
+                .orElseThrow(() -> new RuntimeException("Not a member of this crew"));
 
         // Captain cannot leave
-        if ("captain".equals(member.get().getRole())) {
+        if ("captain".equals(memberEntity.getRole())) {
             throw new RuntimeException("Captain cannot leave the crew");
         }
 
-        @SuppressWarnings("null")
-        CrewMember memberEntity = member.get();
         crewMemberRepository.delete(memberEntity);
     }
 }
