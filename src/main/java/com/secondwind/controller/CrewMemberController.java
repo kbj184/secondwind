@@ -32,8 +32,8 @@ public class CrewMemberController {
         List<CrewMember> members = crewMemberRepository.findByCrewId(crewId);
 
         return members.stream().map(member -> {
-            Long userId = member.getUserId();
-            var user = userId != null ? userRepository.findById(userId).orElse(null) : null;
+            Long userIdObj = member.getUserId();
+            var user = userIdObj != null ? userRepository.findById((long) userIdObj).orElse(null) : null;
 
             CrewMemberDTO dto = new CrewMemberDTO();
             dto.setId(member.getId());
@@ -70,7 +70,11 @@ public class CrewMemberController {
         }
 
         // Check if already a member of THIS crew
-        var existingMember = crewMemberRepository.findByCrewIdAndUserId(crewId, userAuth.getId());
+        Long userId = userAuth.getId();
+        if (userId == null)
+            throw new RuntimeException("User ID not found");
+
+        var existingMember = crewMemberRepository.findByCrewIdAndUserId((long) crewId, userId);
         if (existingMember.isPresent()) {
             throw new RuntimeException("Already a member of this crew");
         }
@@ -79,7 +83,7 @@ public class CrewMemberController {
 
         CrewMember member = new CrewMember();
         member.setCrewId(crewId);
-        member.setUserId(userAuth.getId());
+        member.setUserId(userId);
         member.setRole("member");
 
         CrewMember savedMember = crewMemberRepository.save(member);
@@ -105,7 +109,11 @@ public class CrewMemberController {
             throw new RuntimeException("User not found");
         }
 
-        CrewMember memberEntity = crewMemberRepository.findByCrewIdAndUserId(crewId, userAuth.getId())
+        Long currentUserId = userAuth.getId();
+        if (currentUserId == null)
+            throw new RuntimeException("User ID not found");
+
+        CrewMember memberEntity = crewMemberRepository.findByCrewIdAndUserId((long) crewId, currentUserId)
                 .orElseThrow(() -> new RuntimeException("Not a member of this crew"));
 
         // Captain cannot leave
