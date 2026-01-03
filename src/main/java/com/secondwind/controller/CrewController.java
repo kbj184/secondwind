@@ -79,6 +79,22 @@ public class CrewController {
         captainMember.setCrewId(savedCrew.getId());
         captainMember.setUserId(userAuth.getId());
         captainMember.setRole("captain");
+        captainMember.setStatus("APPROVED"); // Captain is always approved
+
+        // Set as primary crew if this is the user's first crew
+        long userCrewCount = crewMemberRepository.countByUserId(userAuth.getId());
+        captainMember.setIsPrimary(userCrewCount == 0);
+
+        // If setting as primary, unset existing primary crew
+        if (captainMember.getIsPrimary()) {
+            List<CrewMember> existingPrimaryList = crewMemberRepository.findByUserIdAndIsPrimary(userAuth.getId(),
+                    true);
+            for (CrewMember existingPrimary : existingPrimaryList) {
+                existingPrimary.setIsPrimary(false);
+                crewMemberRepository.save(existingPrimary);
+            }
+        }
+
         crewMemberRepository.save(captainMember);
 
         CrewDTO response = new CrewDTO();
