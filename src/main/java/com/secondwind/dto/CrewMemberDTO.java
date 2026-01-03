@@ -12,5 +12,6 @@ public class CrewMemberDTO {
     private String nicknameImage;
     private String role;
     private String status; // "PENDING", "APPROVED", "REJECTED"
+    private Boolean isPrimary; // Primary crew flag
     private String joinedAt;
 }

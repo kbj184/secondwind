@@ -99,6 +99,21 @@ public class CrewMemberController {
             member.setStatus("PENDING");
         }
 
+        // Set primary crew logic
+        // First crew becomes primary automatically
+        long userCrewCount = crewMemberRepository.countByUserId(userId);
+        boolean isFirstCrew = userCrewCount == 0;
+        member.setIsPrimary(isFirstCrew);
+
+        // If setting as primary, unset existing primary crew
+        if (member.getIsPrimary()) {
+            List<CrewMember> existingPrimaryList = crewMemberRepository.findByUserIdAndIsPrimary(userId, true);
+            for (CrewMember existingPrimary : existingPrimaryList) {
+                existingPrimary.setIsPrimary(false);
+                crewMemberRepository.save(existingPrimary);
+            }
+        }
+
         CrewMember savedMember = crewMemberRepository.save(member);
 
         CrewMemberDTO response = new CrewMemberDTO();
@@ -106,6 +121,7 @@ public class CrewMemberController {
         response.setUserId(savedMember.getUserId());
         response.setRole(savedMember.getRole());
         response.setStatus(savedMember.getStatus());
+        response.setIsPrimary(savedMember.getIsPrimary());
         response.setJoinedAt(savedMember.getJoinedAt().toString());
         response.setNickname(userAuth.getNickname());
         response.setNicknameImage(userAuth.getNicknameImage());
@@ -216,5 +232,58 @@ public class CrewMemberController {
         // Option 2: Set status to REJECTED (uncomment if you prefer this)
         // member.setStatus("REJECTED");
         // crewMemberRepository.save(member);
+    }
+
+    @PutMapping("/{crewId}/set-primary")
+    @org.springframework.transaction.annotation.Transactional
+    public CrewMemberDTO setPrimaryCrew(@PathVariable Long crewId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        Long userId = userAuth.getId();
+        if (userId == null) {
+            throw new RuntimeException("User ID not found");
+        }
+
+        // Check if user is a member of this crew
+        CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
+                .orElseThrow(() -> new RuntimeException("Not a member of this crew"));
+
+        // Only approved members can set primary crew
+        if (!"APPROVED".equals(member.getStatus())) {
+            throw new RuntimeException("Only approved members can set primary crew");
+        }
+
+        // Unset existing primary crew
+        List<CrewMember> existingPrimaryList = crewMemberRepository.findByUserIdAndIsPrimary(userId, true);
+        for (CrewMember existingPrimary : existingPrimaryList) {
+            existingPrimary.setIsPrimary(false);
+            crewMemberRepository.save(existingPrimary);
+        }
+
+        // Set new primary crew
+        member.setIsPrimary(true);
+        CrewMember updatedMember = crewMemberRepository.save(member);
+
+        // Get user info for response
+        var memberUser = userRepository.findById(updatedMember.getUserId()).orElse(null);
+
+        CrewMemberDTO response = new CrewMemberDTO();
+        response.setId(updatedMember.getId());
+        response.setUserId(updatedMember.getUserId());
+        response.setRole(updatedMember.getRole());
+        response.setStatus(updatedMember.getStatus());
+        response.setIsPrimary(updatedMember.getIsPrimary());
+        response.setJoinedAt(updatedMember.getJoinedAt().toString());
+        if (memberUser != null) {
+            response.setNickname(memberUser.getNickname());
+            response.setNicknameImage(memberUser.getNicknameImage());
+        }
+
+        return response;
     }
 }

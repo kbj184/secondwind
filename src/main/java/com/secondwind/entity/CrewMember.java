@@ -27,6 +27,9 @@ public class CrewMember {
     @Column(name = "status", nullable = false)
     private String status = "APPROVED"; // "PENDING", "APPROVED", "REJECTED"
 
+    @Column(name = "is_primary", nullable = false)
+    private Boolean isPrimary = false; // Primary crew flag
+
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 

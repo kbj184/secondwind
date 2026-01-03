@@ -94,8 +94,8 @@ public class CrewController {
         return response;
     }
 
-    @GetMapping("/my")
-    public CrewDTO getMyCrew() {
+    @GetMapping("/my-crews")
+    public java.util.Map<String, Object> getMyCrews() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
 
@@ -103,24 +103,67 @@ public class CrewController {
             throw new RuntimeException("User not found");
         }
 
-        var crew = crewRepository.findByCaptainId(userAuth.getId());
+        Long userId = userAuth.getId();
 
-        if (crew.isEmpty()) {
-            return null;
+        // Get primary crew
+        List<com.secondwind.entity.CrewMember> primaryMembers = crewMemberRepository.findByUserIdAndIsPrimary(userId,
+                true);
+        CrewDTO primaryCrew = null;
+        if (!primaryMembers.isEmpty()) {
+            var member = primaryMembers.get(0);
+            if ("APPROVED".equals(member.getStatus())) {
+                var crew = crewRepository.findById(member.getCrewId());
+                if (crew.isPresent()) {
+                    Crew c = crew.get();
+                    primaryCrew = new CrewDTO();
+                    primaryCrew.setId(c.getId());
+                    primaryCrew.setName(c.getName());
+                    primaryCrew.setDescription(c.getDescription());
+                    primaryCrew.setImageUrl(c.getImageUrl());
+                    primaryCrew.setCaptainId(c.getCaptainId());
+                    primaryCrew.setJoinType(c.getJoinType());
+                    primaryCrew.setCreatedAt(c.getCreatedAt().toString());
+                    primaryCrew.setMemberCount(crewMemberRepository.countByCrewId(c.getId()));
+                }
+            }
         }
 
-        Crew foundCrew = crew.get();
-        CrewDTO response = new CrewDTO();
-        response.setId(foundCrew.getId());
-        response.setName(foundCrew.getName());
-        response.setDescription(foundCrew.getDescription());
-        response.setImageUrl(foundCrew.getImageUrl());
-        response.setCaptainId(foundCrew.getCaptainId());
-        response.setJoinType(foundCrew.getJoinType());
-        response.setCreatedAt(foundCrew.getCreatedAt().toString());
-        response.setMemberCount(crewMemberRepository.countByCrewId(foundCrew.getId()));
+        // Get secondary crews
+        List<CrewDTO> secondaryCrews = crewMemberRepository.findByUserIdAndIsPrimary(userId, false)
+                .stream()
+                .filter(member -> "APPROVED".equals(member.getStatus()))
+                .map(member -> {
+                    var crew = crewRepository.findById(member.getCrewId());
+                    if (crew.isPresent()) {
+                        Crew c = crew.get();
+                        CrewDTO dto = new CrewDTO();
+                        dto.setId(c.getId());
+                        dto.setName(c.getName());
+                        dto.setDescription(c.getDescription());
+                        dto.setImageUrl(c.getImageUrl());
+                        dto.setCaptainId(c.getCaptainId());
+                        dto.setJoinType(c.getJoinType());
+                        dto.setCreatedAt(c.getCreatedAt().toString());
+                        dto.setMemberCount(crewMemberRepository.countByCrewId(c.getId()));
+                        return dto;
+                    }
+                    return null;
+                })
+                .filter(dto -> dto != null)
+                .collect(java.util.stream.Collectors.toList());
 
-        return response;
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("primaryCrew", primaryCrew);
+        result.put("secondaryCrews", secondaryCrews);
+
+        return result;
+    }
+
+    // Keep old endpoint for backward compatibility
+    @GetMapping("/my")
+    public CrewDTO getMyCrew() {
+        var result = getMyCrews();
+        return (CrewDTO) result.get("primaryCrew");
     }
 
     @GetMapping("/all")

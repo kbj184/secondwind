@@ -13,4 +13,13 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, Long> {
     Optional<CrewMember> findByUserId(Long userId);
 
     long countByCrewId(Long crewId);
+
+    // Primary crew management
+    List<CrewMember> findAllByUserId(Long userId);
+
+    List<CrewMember> findByUserIdAndIsPrimary(Long userId, Boolean isPrimary);
+
+    long countByUserId(Long userId);
+
+    List<CrewMember> findByUserIdAndStatus(Long userId, String status);
 }
