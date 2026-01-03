@@ -11,5 +11,6 @@ public class CrewMemberDTO {
     private String nickname;
     private String nicknameImage;
     private String role;
+    private String status; // "PENDING", "APPROVED", "REJECTED"
     private String joinedAt;
 }

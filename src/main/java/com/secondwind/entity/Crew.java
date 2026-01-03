@@ -27,6 +27,9 @@ public class Crew {
     @Column(name = "captain_id", nullable = false)
     private Long captainId;
 
+    @Column(name = "join_type", nullable = false)
+    private String joinType = "AUTO"; // "AUTO" or "APPROVAL"
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

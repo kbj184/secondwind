@@ -1,6 +1,7 @@
 package com.secondwind.controller;
 
 import com.secondwind.dto.CrewMemberDTO;
+import com.secondwind.entity.Crew;
 import com.secondwind.entity.CrewMember;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
@@ -39,6 +40,7 @@ public class CrewMemberController {
             dto.setId(member.getId());
             dto.setUserId(member.getUserId());
             dto.setRole(member.getRole());
+            dto.setStatus(member.getStatus());
             dto.setJoinedAt(member.getJoinedAt().toString());
 
             if (user != null) {
@@ -81,10 +83,21 @@ public class CrewMemberController {
 
         // 중복 크루 가입 허용 - 다른 크루 체크 제거
 
+        // Get crew to check join type
+        Crew crewEntity = crew.get();
+        String joinType = crewEntity.getJoinType();
+
         CrewMember member = new CrewMember();
         member.setCrewId(crewId);
         member.setUserId(userId);
         member.setRole("member");
+
+        // Set status based on join type
+        if ("AUTO".equals(joinType)) {
+            member.setStatus("APPROVED");
+        } else {
+            member.setStatus("PENDING");
+        }
 
         CrewMember savedMember = crewMemberRepository.save(member);
 
@@ -92,6 +105,7 @@ public class CrewMemberController {
         response.setId(savedMember.getId());
         response.setUserId(savedMember.getUserId());
         response.setRole(savedMember.getRole());
+        response.setStatus(savedMember.getStatus());
         response.setJoinedAt(savedMember.getJoinedAt().toString());
         response.setNickname(userAuth.getNickname());
         response.setNicknameImage(userAuth.getNicknameImage());
@@ -122,5 +136,85 @@ public class CrewMemberController {
         }
 
         crewMemberRepository.delete(memberEntity);
+    }
+
+    @PostMapping("/{crewId}/members/{memberId}/approve")
+    @org.springframework.transaction.annotation.Transactional
+    public CrewMemberDTO approveMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Check if user is the captain
+        var crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can approve members");
+        }
+
+        // Find and approve the member
+        CrewMember member = crewMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        if (!member.getCrewId().equals(crewId)) {
+            throw new RuntimeException("Member does not belong to this crew");
+        }
+
+        member.setStatus("APPROVED");
+        CrewMember updatedMember = crewMemberRepository.save(member);
+
+        // Get user info for response
+        var memberUser = userRepository.findById(updatedMember.getUserId()).orElse(null);
+
+        CrewMemberDTO response = new CrewMemberDTO();
+        response.setId(updatedMember.getId());
+        response.setUserId(updatedMember.getUserId());
+        response.setRole(updatedMember.getRole());
+        response.setStatus(updatedMember.getStatus());
+        response.setJoinedAt(updatedMember.getJoinedAt().toString());
+        if (memberUser != null) {
+            response.setNickname(memberUser.getNickname());
+            response.setNicknameImage(memberUser.getNicknameImage());
+        }
+
+        return response;
+    }
+
+    @PostMapping("/{crewId}/members/{memberId}/reject")
+    @org.springframework.transaction.annotation.Transactional
+    public void rejectMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Check if user is the captain
+        var crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can reject members");
+        }
+
+        // Find and delete the member (or set status to REJECTED)
+        CrewMember member = crewMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        if (!member.getCrewId().equals(crewId)) {
+            throw new RuntimeException("Member does not belong to this crew");
+        }
+
+        // Option 1: Delete the member
+        crewMemberRepository.delete(member);
+
+        // Option 2: Set status to REJECTED (uncomment if you prefer this)
+        // member.setStatus("REJECTED");
+        // crewMemberRepository.save(member);
     }
 }

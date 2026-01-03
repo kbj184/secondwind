@@ -53,6 +53,7 @@ public class CrewController {
         crew.setDescription(crewDTO.getDescription());
         crew.setImageUrl(crewDTO.getImageUrl());
         crew.setCaptainId(userAuth.getId());
+        crew.setJoinType(crewDTO.getJoinType() != null ? crewDTO.getJoinType() : "AUTO");
 
         Crew savedCrew = crewRepository.save(crew);
 
@@ -86,6 +87,7 @@ public class CrewController {
         response.setDescription(savedCrew.getDescription());
         response.setImageUrl(savedCrew.getImageUrl());
         response.setCaptainId(savedCrew.getCaptainId());
+        response.setJoinType(savedCrew.getJoinType());
         response.setCreatedAt(savedCrew.getCreatedAt().toString());
         response.setMemberCount(1L);
 
@@ -114,6 +116,7 @@ public class CrewController {
         response.setDescription(foundCrew.getDescription());
         response.setImageUrl(foundCrew.getImageUrl());
         response.setCaptainId(foundCrew.getCaptainId());
+        response.setJoinType(foundCrew.getJoinType());
         response.setCreatedAt(foundCrew.getCreatedAt().toString());
         response.setMemberCount(crewMemberRepository.countByCrewId(foundCrew.getId()));
 
@@ -131,6 +134,7 @@ public class CrewController {
             dto.setDescription(crew.getDescription());
             dto.setImageUrl(crew.getImageUrl());
             dto.setCaptainId(crew.getCaptainId());
+            dto.setJoinType(crew.getJoinType());
             dto.setCreatedAt(crew.getCreatedAt().toString());
             dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
             return dto;
@@ -178,6 +182,7 @@ public class CrewController {
             dto.setDescription(crew.getDescription());
             dto.setImageUrl(crew.getImageUrl());
             dto.setCaptainId(crew.getCaptainId());
+            dto.setJoinType(crew.getJoinType());
             dto.setCreatedAt(crew.getCreatedAt().toString());
             dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
             return dto;

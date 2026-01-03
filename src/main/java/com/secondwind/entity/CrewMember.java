@@ -24,6 +24,9 @@ public class CrewMember {
     @Column(name = "role", nullable = false)
     private String role; // "captain" or "member"
 
+    @Column(name = "status", nullable = false)
+    private String status = "APPROVED"; // "PENDING", "APPROVED", "REJECTED"
+
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
 
