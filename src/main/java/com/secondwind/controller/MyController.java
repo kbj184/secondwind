@@ -2,6 +2,7 @@ package com.secondwind.controller;
 
 import com.secondwind.dto.UserDTO;
 import com.secondwind.entity.UserAuth;
+import com.secondwind.entity.CrewMember;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
@@ -59,16 +60,20 @@ public class MyController {
             userDTO.setRunnerGrade("BEGINNER");
         }
 
-        // Crew Info Logic
-        var crewMember = crewMemberRepository.findByUserId(userAuth.getId());
-        if (crewMember.isPresent()) {
-            Long crewId = crewMember.get().getCrewId();
-            if (crewId != null) {
-                var crew = crewRepository.findById(crewId);
-                if (crew.isPresent()) {
-                    userDTO.setCrewId(crew.get().getId());
-                    userDTO.setCrewName(crew.get().getName());
-                    userDTO.setCrewImage(crew.get().getImageUrl());
+        // Crew Info Logic (Primary Crew Only)
+        // 대표 크루만 헤더와 사용자 정보에 표시
+        var crewMembers = crewMemberRepository.findByUserIdAndIsPrimary(userAuth.getId(), true);
+        if (!crewMembers.isEmpty()) {
+            CrewMember member = crewMembers.get(0);
+            if ("APPROVED".equals(member.getStatus())) {
+                Long crewId = member.getCrewId();
+                if (crewId != null) {
+                    var crew = crewRepository.findById(crewId);
+                    if (crew.isPresent()) {
+                        userDTO.setCrewId(crew.get().getId());
+                        userDTO.setCrewName(crew.get().getName());
+                        userDTO.setCrewImage(crew.get().getImageUrl());
+                    }
                 }
             }
         }
