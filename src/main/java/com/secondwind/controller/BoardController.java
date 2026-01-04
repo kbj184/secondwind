@@ -203,7 +203,10 @@ public class BoardController {
     // 댓글 작성
     @PostMapping("/posts/{postId}/comments")
     @Transactional
-    public CommentDTO createComment(@PathVariable Long postId, @RequestBody CommentDTO commentDTO) {
+    public CommentDTO createComment(@PathVariable Long postId, @RequestBody java.util.Map<String, Object> body) {
+        System.out.println("DEBUG: createComment called with postId: " + postId);
+        System.out.println("DEBUG: Request Body: " + body);
+
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var user = userRepository.findByEmail(email);
 
@@ -223,10 +226,15 @@ public class BoardController {
             }
         }
 
+        String content = (String) body.get("content");
+        if (content == null || content.trim().isEmpty()) {
+            throw new RuntimeException("Comment content is empty");
+        }
+
         Comment comment = new Comment();
         comment.setPostId(postId);
         comment.setAuthorId(user.getId());
-        comment.setContent(commentDTO.getContent());
+        comment.setContent(content);
 
         Comment savedComment = commentRepository.save(comment);
 
