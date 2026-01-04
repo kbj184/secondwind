@@ -154,9 +154,9 @@ public class CrewMemberController {
         crewMemberRepository.delete(memberEntity);
     }
 
-    @PostMapping("/{crewId}/members/{memberId}/approve")
+    @PostMapping("/{crewId}/members/{userId}/approve")
     @org.springframework.transaction.annotation.Transactional
-    public CrewMemberDTO approveMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+    public CrewMemberDTO approveMember(@PathVariable Long crewId, @PathVariable Long userId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
 
@@ -173,7 +173,7 @@ public class CrewMemberController {
         }
 
         // Find and approve the member
-        CrewMember member = crewMemberRepository.findById(memberId)
+        CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
         if (!member.getCrewId().equals(crewId)) {
@@ -200,9 +200,9 @@ public class CrewMemberController {
         return response;
     }
 
-    @PostMapping("/{crewId}/members/{memberId}/reject")
+    @PostMapping("/{crewId}/members/{userId}/reject")
     @org.springframework.transaction.annotation.Transactional
-    public void rejectMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+    public void rejectMember(@PathVariable Long crewId, @PathVariable Long userId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var userAuth = userRepository.findByEmail(email);
 
@@ -219,7 +219,7 @@ public class CrewMemberController {
         }
 
         // Find and delete the member (or set status to REJECTED)
-        CrewMember member = crewMemberRepository.findById(memberId)
+        CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
 
         if (!member.getCrewId().equals(crewId)) {
