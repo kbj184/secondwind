@@ -22,4 +22,5 @@ public class PostDTO {
     private Integer commentCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean isLikedByCurrentUser; // 현재 사용자의 좋아요 여부
 }

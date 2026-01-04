@@ -11,6 +11,7 @@ import com.secondwind.repository.CommentRepository;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.CrewMemberRepository;
+import com.secondwind.repository.PostLikeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,17 +31,20 @@ public class BoardController {
     private final UserRepository userRepository;
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
+    private final PostLikeRepository postLikeRepository;
 
     public BoardController(PostRepository postRepository,
             CommentRepository commentRepository,
             UserRepository userRepository,
             CrewRepository crewRepository,
-            CrewMemberRepository crewMemberRepository) {
+            CrewMemberRepository crewMemberRepository,
+            PostLikeRepository postLikeRepository) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.crewRepository = crewRepository;
         this.crewMemberRepository = crewMemberRepository;
+        this.postLikeRepository = postLikeRepository;
     }
 
     // 게시글 목록 조회
@@ -269,6 +273,75 @@ public class BoardController {
         postRepository.decrementCommentCount(comment.getPostId());
     }
 
+    // 게시글 좋아요
+    @PostMapping("/posts/{postId}/like")
+    @Transactional
+    public java.util.Map<String, Object> likePost(@PathVariable Long postId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // 이미 좋아요를 눌렀는지 확인
+        if (postLikeRepository.existsByPostIdAndUserId(postId, user.getId())) {
+            throw new RuntimeException("Already liked");
+        }
+
+        // 좋아요 추가
+        com.secondwind.entity.PostLike like = new com.secondwind.entity.PostLike();
+        like.setPostId(postId);
+        like.setUserId(user.getId());
+        postLikeRepository.save(like);
+
+        // 좋아요 수 증가
+        postRepository.incrementLikeCount(postId);
+
+        // 업데이트된 좋아요 수 반환
+        long likeCount = postLikeRepository.countByPostId(postId);
+        return java.util.Map.of(
+                "success", true,
+                "likeCount", likeCount,
+                "isLiked", true);
+    }
+
+    // 게시글 좋아요 취소
+    @DeleteMapping("/posts/{postId}/like")
+    @Transactional
+    public java.util.Map<String, Object> unlikePost(@PathVariable Long postId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        // 좋아요를 눌렀는지 확인
+        if (!postLikeRepository.existsByPostIdAndUserId(postId, user.getId())) {
+            throw new RuntimeException("Not liked yet");
+        }
+
+        // 좋아요 삭제
+        postLikeRepository.deleteByPostIdAndUserId(postId, user.getId());
+
+        // 좋아요 수 감소
+        postRepository.decrementLikeCount(postId);
+
+        // 업데이트된 좋아요 수 반환
+        long likeCount = postLikeRepository.countByPostId(postId);
+        return java.util.Map.of(
+                "success", true,
+                "likeCount", likeCount,
+                "isLiked", false);
+    }
+
     // DTO 변환 헬퍼
     private PostDTO convertToDTO(Post post) {
         PostDTO dto = new PostDTO();
@@ -290,6 +363,20 @@ public class BoardController {
         if (author != null) {
             dto.setAuthorNickname(author.getNickname());
             dto.setAuthorImage(author.getNicknameImage());
+        }
+
+        // 현재 사용자의 좋아요 여부 확인
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            var user = userRepository.findByEmail(email);
+            if (user != null) {
+                boolean isLiked = postLikeRepository.existsByPostIdAndUserId(post.getId(), user.getId());
+                dto.setIsLikedByCurrentUser(isLiked);
+            } else {
+                dto.setIsLikedByCurrentUser(false);
+            }
+        } catch (Exception e) {
+            dto.setIsLikedByCurrentUser(false);
         }
 
         return dto;
