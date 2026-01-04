@@ -415,7 +415,7 @@ public class CrewController {
 
         // Check if user is captain
         CrewMember captain = crewMemberRepository.findByCrewIdAndUserId(crewId, user.getId()).orElse(null);
-        if (captain == null || !"CAPTAIN".equals(captain.getRole())) {
+        if (captain == null || !"CAPTAIN".equalsIgnoreCase(captain.getRole())) {
             return ResponseEntity.status(403).body("크루장만 멤버를 승인할 수 있습니다.");
         }
 
@@ -425,7 +425,7 @@ public class CrewController {
             return ResponseEntity.status(404).body("멤버를 찾을 수 없습니다.");
         }
 
-        if (!"PENDING".equals(pendingMember.getStatus())) {
+        if (!"PENDING".equalsIgnoreCase(pendingMember.getStatus())) {
             return ResponseEntity.status(400).body("승인 대기 중인 멤버가 아닙니다.");
         }
 
@@ -456,7 +456,7 @@ public class CrewController {
 
         // Check if user is captain
         CrewMember captain = crewMemberRepository.findByCrewIdAndUserId(crewId, user.getId()).orElse(null);
-        if (captain == null || !"CAPTAIN".equals(captain.getRole())) {
+        if (captain == null || !"CAPTAIN".equalsIgnoreCase(captain.getRole())) {
             return ResponseEntity.status(403).body("크루장만 멤버를 거절할 수 있습니다.");
         }
 
@@ -466,7 +466,7 @@ public class CrewController {
             return ResponseEntity.status(404).body("멤버를 찾을 수 없습니다.");
         }
 
-        if (!"PENDING".equals(pendingMember.getStatus())) {
+        if (!"PENDING".equalsIgnoreCase(pendingMember.getStatus())) {
             return ResponseEntity.status(400).body("승인 대기 중인 멤버가 아닙니다.");
         }
 
