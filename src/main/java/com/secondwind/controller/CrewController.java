@@ -197,16 +197,7 @@ public class CrewController {
             if ("APPROVED".equals(member.getStatus())) {
                 var crew = crewRepository.findById(member.getCrewId());
                 if (crew.isPresent()) {
-                    Crew c = crew.get();
-                    primaryCrew = new CrewDTO();
-                    primaryCrew.setId(c.getId());
-                    primaryCrew.setName(c.getName());
-                    primaryCrew.setDescription(c.getDescription());
-                    primaryCrew.setImageUrl(c.getImageUrl());
-                    primaryCrew.setCaptainId(c.getCaptainId());
-                    primaryCrew.setJoinType(c.getJoinType());
-                    primaryCrew.setCreatedAt(c.getCreatedAt().toString());
-                    primaryCrew.setMemberCount(crewMemberRepository.countByCrewId(c.getId()));
+                    primaryCrew = convertToDTO(crew.get());
                 }
             }
         }
@@ -218,17 +209,7 @@ public class CrewController {
                 .map(member -> {
                     var crew = crewRepository.findById(member.getCrewId());
                     if (crew.isPresent()) {
-                        Crew c = crew.get();
-                        CrewDTO dto = new CrewDTO();
-                        dto.setId(c.getId());
-                        dto.setName(c.getName());
-                        dto.setDescription(c.getDescription());
-                        dto.setImageUrl(c.getImageUrl());
-                        dto.setCaptainId(c.getCaptainId());
-                        dto.setJoinType(c.getJoinType());
-                        dto.setCreatedAt(c.getCreatedAt().toString());
-                        dto.setMemberCount(crewMemberRepository.countByCrewId(c.getId()));
-                        return dto;
+                        return convertToDTO(crew.get());
                     }
                     return null;
                 })
@@ -349,32 +330,7 @@ public class CrewController {
         }
 
         // 3. DTO로 변환하여 반환
-        return nearbyCrews.stream().map(crew -> {
-            CrewDTO dto = new CrewDTO();
-            dto.setId(crew.getId());
-            dto.setName(crew.getName());
-            dto.setDescription(crew.getDescription());
-            dto.setImageUrl(crew.getImageUrl());
-            dto.setCaptainId(crew.getCaptainId());
-            dto.setJoinType(crew.getJoinType());
-            dto.setCreatedAt(crew.getCreatedAt().toString());
-            dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
-
-            // 활동 지역 정보 추가 (첫 번째 활동 지역)
-            List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
-            if (!activityAreas.isEmpty()) {
-                CrewActivityArea area = activityAreas.get(0);
-                dto.setActivityAreaLevel1(area.getAdminLevel1());
-                dto.setActivityAreaLevel2(area.getAdminLevel2());
-                dto.setActivityAreaLevel3(area.getAdminLevel3());
-            }
-
-            // 크루원 총 이동거리 추가
-            Double totalDistance = runningSessionRepository.sumDistanceByCrewMembers(crew.getId());
-            dto.setTotalDistance(totalDistance != null ? totalDistance : 0.0);
-
-            return dto;
-        }).collect(java.util.stream.Collectors.toList());
+        return nearbyCrews.stream().map(this::convertToDTO).collect(java.util.stream.Collectors.toList());
     }
 
     // 크루 통계 조회
@@ -391,5 +347,36 @@ public class CrewController {
         stats.put("totalDistance", totalDistance != null ? totalDistance : 0.0);
 
         return stats;
+    }
+
+    // Helper method to convert Crew entity to DTO with activity area info
+    private CrewDTO convertToDTO(Crew crew) {
+        CrewDTO dto = new CrewDTO();
+        dto.setId(crew.getId());
+        dto.setName(crew.getName());
+        dto.setDescription(crew.getDescription());
+        dto.setImageUrl(crew.getImageUrl());
+        dto.setCaptainId(crew.getCaptainId());
+        dto.setJoinType(crew.getJoinType());
+        dto.setCreatedAt(crew.getCreatedAt().toString());
+        dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
+
+        // 활동 지역 정보 추가 (첫 번째 활동 지역)
+        List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
+        if (!activityAreas.isEmpty()) {
+            CrewActivityArea area = activityAreas.get(0);
+            dto.setActivityAreaLevel1(area.getAdminLevel1());
+            dto.setActivityAreaLevel2(area.getAdminLevel2());
+            dto.setActivityAreaLevel3(area.getAdminLevel3());
+            dto.setActivityAreaLatitude(area.getLatitude());
+            dto.setActivityAreaLongitude(area.getLongitude());
+            dto.setActivityAreaAddress(area.getAdminLevelFull());
+        }
+
+        // 크루원 총 이동거리 추가
+        Double totalDistance = runningSessionRepository.sumDistanceByCrewMembers(crew.getId());
+        dto.setTotalDistance(totalDistance != null ? totalDistance : 0.0);
+
+        return dto;
     }
 }

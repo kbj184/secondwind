@@ -21,6 +21,9 @@ public class CrewDTO {
     private String activityAreaLevel1; // 시/도
     private String activityAreaLevel2; // 시/군/구
     private String activityAreaLevel3; // 읍/면/동
+    private Double activityAreaLatitude; // 위도
+    private Double activityAreaLongitude; // 경도
+    private String activityAreaAddress; // 전체 주소
 
     // 크루 통계
     private Double totalDistance; // 크루원 총 이동거리 (km)
