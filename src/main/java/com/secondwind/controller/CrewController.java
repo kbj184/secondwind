@@ -258,7 +258,7 @@ public class CrewController {
 
             // 여전히 좌표가 없으면 전체 크루 반환
             if (latitude == null || longitude == null) {
-                return getAllCrews();
+                return getAllCrews(null, null, null);
             }
         }
 
@@ -267,7 +267,7 @@ public class CrewController {
 
         // 2. 근처에 크루가 없으면 전체 크루 반환
         if (nearbyCrews.isEmpty()) {
-            return getAllCrews();
+            return getAllCrews(null, null, null);
         }
 
         // 3. DTO로 변환하여 반환
