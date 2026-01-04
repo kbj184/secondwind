@@ -40,6 +40,69 @@ public class CrewController {
         this.runningSessionRepository = runningSessionRepository;
     }
 
+    @PutMapping("/{crewId}")
+    @org.springframework.transaction.annotation.Transactional
+    public CrewDTO updateCrew(@PathVariable Long crewId, @RequestBody CrewDTO crewDTO) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        Crew crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        // 권한 체크: 크루장만 수정 가능
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can update crew");
+        }
+
+        // 기본 정보 업데이트
+        if (crewDTO.getName() != null)
+            crew.setName(crewDTO.getName());
+        if (crewDTO.getDescription() != null)
+            crew.setDescription(crewDTO.getDescription());
+        if (crewDTO.getImageUrl() != null)
+            crew.setImageUrl(crewDTO.getImageUrl());
+        // joinType 등 다른 필드도 필요하면 추가
+
+        crewRepository.save(crew);
+
+        // 활동 지역 업데이트 (기존 지역 삭제 후 새로 저장)
+        if (crewDTO.getActivityAreas() != null) {
+            crewActivityAreaRepository.deleteByCrewId(crewId);
+
+            if (!crewDTO.getActivityAreas().isEmpty()) {
+                for (ActivityAreaDTO areaDTO : crewDTO.getActivityAreas()) {
+                    CrewActivityArea area = new CrewActivityArea();
+                    area.setCrewId(crew.getId());
+                    area.setCountryCode(areaDTO.getCountryCode());
+                    area.setCountryName(areaDTO.getCountryName());
+                    area.setAdminLevel1(areaDTO.getAdminLevel1());
+                    area.setAdminLevel2(areaDTO.getAdminLevel2());
+                    area.setAdminLevel3(areaDTO.getAdminLevel3());
+                    area.setAdminLevelFull(areaDTO.getAdminLevelFull());
+                    area.setLatitude(areaDTO.getLatitude());
+                    area.setLongitude(areaDTO.getLongitude());
+                    crewActivityAreaRepository.save(area);
+                }
+            }
+        }
+
+        CrewDTO response = new CrewDTO();
+        response.setId(crew.getId());
+        response.setName(crew.getName());
+        response.setDescription(crew.getDescription());
+        response.setImageUrl(crew.getImageUrl());
+        response.setCaptainId(crew.getCaptainId());
+        response.setJoinType(crew.getJoinType());
+        response.setCreatedAt(crew.getCreatedAt().toString());
+        response.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
+
+        return response;
+    }
+
     @PostMapping
     @org.springframework.transaction.annotation.Transactional
     public CrewDTO createCrew(@RequestBody CrewDTO crewDTO) {
@@ -206,8 +269,23 @@ public class CrewController {
                     dto.setCreatedAt(crew.getCreatedAt().toString());
                     dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
 
-                    // 활동 지역 정보 추가 (첫 번째 활동 지역)
+                    // 활동 지역 정보 추가
                     List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
+
+                    List<ActivityAreaDTO> areaDTOs = activityAreas.stream().map(area -> {
+                        ActivityAreaDTO areaDTO = new ActivityAreaDTO();
+                        areaDTO.setCountryCode(area.getCountryCode());
+                        areaDTO.setCountryName(area.getCountryName());
+                        areaDTO.setAdminLevel1(area.getAdminLevel1());
+                        areaDTO.setAdminLevel2(area.getAdminLevel2());
+                        areaDTO.setAdminLevel3(area.getAdminLevel3());
+                        areaDTO.setAdminLevelFull(area.getAdminLevelFull());
+                        areaDTO.setLatitude(area.getLatitude());
+                        areaDTO.setLongitude(area.getLongitude());
+                        return areaDTO;
+                    }).collect(java.util.stream.Collectors.toList());
+                    dto.setActivityAreas(areaDTOs);
+
                     if (!activityAreas.isEmpty()) {
                         CrewActivityArea area = activityAreas.get(0);
                         dto.setActivityAreaLevel1(area.getAdminLevel1());
