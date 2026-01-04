@@ -2,6 +2,8 @@ package com.secondwind.repository;
 
 import com.secondwind.entity.RunningSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,4 +23,11 @@ public interface RunningSessionRepository extends JpaRepository<RunningSession, 
 
     // 완료된 세션만 조회
     List<RunningSession> findByUserIdAndIsCompleteTrueOrderByCreatedAtDesc(Long userId);
+
+    // 크루원 총 이동거리 집계
+    @Query("SELECT SUM(r.distance) FROM RunningSession r " +
+            "WHERE r.userId IN (SELECT cm.userId FROM CrewMember cm " +
+            "WHERE cm.crewId = :crewId AND cm.status = 'APPROVED') " +
+            "AND r.isComplete = true")
+    Double sumDistanceByCrewMembers(@Param("crewId") Long crewId);
 }

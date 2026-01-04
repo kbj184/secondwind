@@ -10,6 +10,7 @@ import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewActivityAreaRepository;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.repository.UserActivityAreaRepository;
+import com.secondwind.repository.RunningSessionRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -23,17 +24,20 @@ public class CrewController {
     private final CrewActivityAreaRepository crewActivityAreaRepository;
     private final UserRepository userRepository;
     private final UserActivityAreaRepository userActivityAreaRepository;
+    private final RunningSessionRepository runningSessionRepository;
 
     public CrewController(CrewRepository crewRepository,
             CrewMemberRepository crewMemberRepository,
             CrewActivityAreaRepository crewActivityAreaRepository,
             UserRepository userRepository,
-            UserActivityAreaRepository userActivityAreaRepository) {
+            UserActivityAreaRepository userActivityAreaRepository,
+            RunningSessionRepository runningSessionRepository) {
         this.crewRepository = crewRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.crewActivityAreaRepository = crewActivityAreaRepository;
         this.userRepository = userRepository;
         this.userActivityAreaRepository = userActivityAreaRepository;
+        this.runningSessionRepository = runningSessionRepository;
     }
 
     @PostMapping
@@ -183,21 +187,54 @@ public class CrewController {
     }
 
     @GetMapping("/all")
-    public List<CrewDTO> getAllCrews() {
+    public List<CrewDTO> getAllCrews(
+            @RequestParam(required = false) String adminLevel1,
+            @RequestParam(required = false) String adminLevel2,
+            @RequestParam(required = false) String adminLevel3) {
+
         List<Crew> crews = crewRepository.findAll();
 
-        return crews.stream().map(crew -> {
-            CrewDTO dto = new CrewDTO();
-            dto.setId(crew.getId());
-            dto.setName(crew.getName());
-            dto.setDescription(crew.getDescription());
-            dto.setImageUrl(crew.getImageUrl());
-            dto.setCaptainId(crew.getCaptainId());
-            dto.setJoinType(crew.getJoinType());
-            dto.setCreatedAt(crew.getCreatedAt().toString());
-            dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
-            return dto;
-        }).collect(java.util.stream.Collectors.toList());
+        return crews.stream()
+                .map(crew -> {
+                    CrewDTO dto = new CrewDTO();
+                    dto.setId(crew.getId());
+                    dto.setName(crew.getName());
+                    dto.setDescription(crew.getDescription());
+                    dto.setImageUrl(crew.getImageUrl());
+                    dto.setCaptainId(crew.getCaptainId());
+                    dto.setJoinType(crew.getJoinType());
+                    dto.setCreatedAt(crew.getCreatedAt().toString());
+                    dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
+
+                    // 활동 지역 정보 추가 (첫 번째 활동 지역)
+                    List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
+                    if (!activityAreas.isEmpty()) {
+                        CrewActivityArea area = activityAreas.get(0);
+                        dto.setActivityAreaLevel1(area.getAdminLevel1());
+                        dto.setActivityAreaLevel2(area.getAdminLevel2());
+                        dto.setActivityAreaLevel3(area.getAdminLevel3());
+                    }
+
+                    // 크루원 총 이동거리 추가
+                    Double totalDistance = runningSessionRepository.sumDistanceByCrewMembers(crew.getId());
+                    dto.setTotalDistance(totalDistance != null ? totalDistance : 0.0);
+
+                    return dto;
+                })
+                // 지역 필터링
+                .filter(dto -> {
+                    if (adminLevel1 != null && !adminLevel1.equals(dto.getActivityAreaLevel1())) {
+                        return false;
+                    }
+                    if (adminLevel2 != null && !adminLevel2.equals(dto.getActivityAreaLevel2())) {
+                        return false;
+                    }
+                    if (adminLevel3 != null && !adminLevel3.equals(dto.getActivityAreaLevel3())) {
+                        return false;
+                    }
+                    return true;
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/nearby")
@@ -246,5 +283,21 @@ public class CrewController {
             dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
             return dto;
         }).collect(java.util.stream.Collectors.toList());
+    }
+
+    // 크루 통계 조회
+    @GetMapping("/{crewId}/stats")
+    public java.util.Map<String, Object> getCrewStats(@PathVariable Long crewId) {
+        // 크루원 수 (승인된 멤버만)
+        long memberCount = crewMemberRepository.countByCrewId(crewId);
+
+        // 크루원 총 이동거리
+        Double totalDistance = runningSessionRepository.sumDistanceByCrewMembers(crewId);
+
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+        stats.put("memberCount", memberCount);
+        stats.put("totalDistance", totalDistance != null ? totalDistance : 0.0);
+
+        return stats;
     }
 }
