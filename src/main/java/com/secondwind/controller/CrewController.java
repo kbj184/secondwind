@@ -3,17 +3,24 @@ package com.secondwind.controller;
 import com.secondwind.dto.CrewDTO;
 import com.secondwind.dto.ActivityAreaDTO;
 import com.secondwind.entity.Crew;
-import com.secondwind.entity.CrewMember;
 import com.secondwind.entity.CrewActivityArea;
-import com.secondwind.repository.CrewRepository;
-import com.secondwind.repository.CrewMemberRepository;
+import com.secondwind.entity.CrewMember;
+import com.secondwind.entity.UserAuth;
 import com.secondwind.repository.CrewActivityAreaRepository;
-import com.secondwind.repository.UserRepository;
-import com.secondwind.repository.UserActivityAreaRepository;
+import com.secondwind.repository.CrewMemberRepository;
+import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.RunningSessionRepository;
+import com.secondwind.repository.UserActivityAreaRepository;
+import com.secondwind.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/crew")
