@@ -26,7 +26,12 @@ public class KakaoResponse implements OAuth2Response {
 
     @Override
     public String getEmail() {
-        return kakaoAccount.get("email").toString();
+        // 이메일 권한이 없을 경우 카카오 ID로 대체 이메일 생성
+        if (kakaoAccount != null && kakaoAccount.containsKey("email")) {
+            return kakaoAccount.get("email").toString();
+        }
+        // 이메일 권한이 없으면 카카오 ID로 가상 이메일 생성
+        return "kakao_" + attribute.get("id").toString() + "@kakao.user";
     }
 
     @Override
