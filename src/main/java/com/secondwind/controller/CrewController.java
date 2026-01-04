@@ -351,6 +351,8 @@ public class CrewController {
 
     // Helper method to convert Crew entity to DTO with activity area info
     private CrewDTO convertToDTO(Crew crew) {
+        System.out.println("DEBUG: convertToDTO called for crew ID: " + crew.getId());
+
         CrewDTO dto = new CrewDTO();
         dto.setId(crew.getId());
         dto.setName(crew.getName());
@@ -363,14 +365,21 @@ public class CrewController {
 
         // 활동 지역 정보 추가 (첫 번째 활동 지역)
         List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
+        System.out.println("DEBUG: Found " + activityAreas.size() + " activity areas for crew " + crew.getId());
+
         if (!activityAreas.isEmpty()) {
             CrewActivityArea area = activityAreas.get(0);
+            System.out.println("DEBUG: Activity area - lat: " + area.getLatitude() + ", lng: " + area.getLongitude()
+                    + ", address: " + area.getAdminLevelFull());
+
             dto.setActivityAreaLevel1(area.getAdminLevel1());
             dto.setActivityAreaLevel2(area.getAdminLevel2());
             dto.setActivityAreaLevel3(area.getAdminLevel3());
             dto.setActivityAreaLatitude(area.getLatitude());
             dto.setActivityAreaLongitude(area.getLongitude());
             dto.setActivityAreaAddress(area.getAdminLevelFull());
+        } else {
+            System.out.println("DEBUG: No activity areas found for crew " + crew.getId());
         }
 
         // 크루원 총 이동거리 추가
