@@ -3,7 +3,7 @@ package com.secondwind.controller;
 import com.secondwind.dto.CrewCourseDTO;
 import com.secondwind.entity.CrewCourse;
 import com.secondwind.entity.CrewMember;
-import com.secondwind.entity.User;
+import com.secondwind.entity.UserAuth;
 import com.secondwind.repository.CrewCourseRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.UserRepository;
@@ -42,10 +42,10 @@ public class CrewCourseController {
             dto.setCreatedAt(course.getCreatedAt());
 
             // Get creator info
-            User creator = userRepository.findById(course.getUserId()).orElse(null);
+            UserAuth creator = userRepository.findById(course.getUserId()).orElse(null);
             if (creator != null) {
                 dto.setCreatorNickname(creator.getNickname());
-                dto.setCreatorProfileImage(creator.getProfileImage());
+                dto.setCreatorProfileImage(null); // UserAuth doesn't have profileImage
             }
 
             return dto;
@@ -78,10 +78,10 @@ public class CrewCourseController {
         dto.setCreatedAt(course.getCreatedAt());
 
         // Get creator info
-        User creator = userRepository.findById(course.getUserId()).orElse(null);
+        UserAuth creator = userRepository.findById(course.getUserId()).orElse(null);
         if (creator != null) {
             dto.setCreatorNickname(creator.getNickname());
-            dto.setCreatorProfileImage(creator.getProfileImage());
+            dto.setCreatorProfileImage(null);
         }
 
         return ResponseEntity.ok(dto);
@@ -97,15 +97,15 @@ public class CrewCourseController {
             return ResponseEntity.status(401).body("인증이 필요합니다.");
         }
 
-        String providerId = authentication.getName();
-        User user = userRepository.findByProviderId(providerId);
+        String email = authentication.getName();
+        UserAuth user = userRepository.findByEmail(email);
 
         if (user == null) {
             return ResponseEntity.status(401).body("사용자를 찾을 수 없습니다.");
         }
 
         // Check if user is a member of the crew
-        CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, user.getId());
+        CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, user.getId()).orElse(null);
         if (member == null || !"APPROVED".equals(member.getStatus())) {
             return ResponseEntity.status(403).body("크루 멤버만 코스를 등록할 수 있습니다.");
         }
@@ -132,7 +132,7 @@ public class CrewCourseController {
         responseDTO.setMapThumbnailUrl(saved.getMapThumbnailUrl());
         responseDTO.setCreatedAt(saved.getCreatedAt());
         responseDTO.setCreatorNickname(user.getNickname());
-        responseDTO.setCreatorProfileImage(user.getProfileImage());
+        responseDTO.setCreatorProfileImage(null);
 
         return ResponseEntity.ok(responseDTO);
     }
@@ -148,8 +148,8 @@ public class CrewCourseController {
             return ResponseEntity.status(401).body("인증이 필요합니다.");
         }
 
-        String providerId = authentication.getName();
-        User user = userRepository.findByProviderId(providerId);
+        String email = authentication.getName();
+        UserAuth user = userRepository.findByEmail(email);
 
         if (user == null) {
             return ResponseEntity.status(401).body("사용자를 찾을 수 없습니다.");
