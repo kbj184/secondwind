@@ -20,7 +20,8 @@ public class Comment {
     @Column(name = "author_id", nullable = false)
     private Long authorId;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Lob
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
     @Column(name = "created_at", nullable = false, updatable = false)

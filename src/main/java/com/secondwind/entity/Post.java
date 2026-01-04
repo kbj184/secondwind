@@ -27,7 +27,8 @@ public class Post {
     @Column(nullable = false, length = 200)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(name = "is_pinned", nullable = false)
