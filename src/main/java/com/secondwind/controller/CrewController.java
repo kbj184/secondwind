@@ -281,6 +281,20 @@ public class CrewController {
             dto.setJoinType(crew.getJoinType());
             dto.setCreatedAt(crew.getCreatedAt().toString());
             dto.setMemberCount(crewMemberRepository.countByCrewId(crew.getId()));
+
+            // 활동 지역 정보 추가 (첫 번째 활동 지역)
+            List<CrewActivityArea> activityAreas = crewActivityAreaRepository.findByCrewId(crew.getId());
+            if (!activityAreas.isEmpty()) {
+                CrewActivityArea area = activityAreas.get(0);
+                dto.setActivityAreaLevel1(area.getAdminLevel1());
+                dto.setActivityAreaLevel2(area.getAdminLevel2());
+                dto.setActivityAreaLevel3(area.getAdminLevel3());
+            }
+
+            // 크루원 총 이동거리 추가
+            Double totalDistance = runningSessionRepository.sumDistanceByCrewMembers(crew.getId());
+            dto.setTotalDistance(totalDistance != null ? totalDistance : 0.0);
+
             return dto;
         }).collect(java.util.stream.Collectors.toList());
     }
