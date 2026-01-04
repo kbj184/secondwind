@@ -415,17 +415,26 @@ public class CrewController {
 
         // Check if user is captain
         CrewMember captain = crewMemberRepository.findByCrewIdAndUserId(crewId, user.getId()).orElse(null);
+        System.out.println("DEBUG approve - Captain: " + captain);
+        if (captain != null) {
+            System.out.println("DEBUG approve - Captain role: '" + captain.getRole() + "'");
+        }
         if (captain == null || !"CAPTAIN".equalsIgnoreCase(captain.getRole())) {
+            System.out.println("DEBUG approve - Not captain, returning 403");
             return ResponseEntity.status(403).body("크루장만 멤버를 승인할 수 있습니다.");
         }
 
         // Find pending member
         CrewMember pendingMember = crewMemberRepository.findByCrewIdAndUserId(crewId, userId).orElse(null);
+        System.out.println("DEBUG approve - Pending member: " + pendingMember);
         if (pendingMember == null) {
+            System.out.println("DEBUG approve - Member not found, returning 404");
             return ResponseEntity.status(404).body("멤버를 찾을 수 없습니다.");
         }
 
+        System.out.println("DEBUG approve - Member status: '" + pendingMember.getStatus() + "'");
         if (!"PENDING".equalsIgnoreCase(pendingMember.getStatus())) {
+            System.out.println("DEBUG approve - Not pending status, returning 400");
             return ResponseEntity.status(400).body("승인 대기 중인 멤버가 아닙니다.");
         }
 
