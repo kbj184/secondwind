@@ -22,4 +22,7 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, Long> {
     long countByUserId(Long userId);
 
     List<CrewMember> findByUserIdAndStatus(Long userId, String status);
+
+    // Board permission check
+    boolean existsByCrewIdAndUserIdAndStatus(Long crewId, Long userId, String status);
 }
