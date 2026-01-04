@@ -62,6 +62,7 @@ public class RunningController {
             session.setWateringSegments(dto.getWateringSegments());
             session.setSplits(dto.getSplits());
             session.setIsComplete(dto.getIsComplete());
+            session.setThumbnail(dto.getThumbnail());
 
             // 저장
             RunningSession saved = runningSessionRepository.save(session);
