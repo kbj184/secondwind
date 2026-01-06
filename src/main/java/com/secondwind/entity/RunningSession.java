@@ -64,6 +64,12 @@ public class RunningSession {
     @Column(name = "thumbnail", columnDefinition = "TEXT")
     private String thumbnail;
 
+    @Column(name = "course_id")
+    private Long courseId;
+
+    @Column(name = "course_completed", nullable = false)
+    private Boolean courseCompleted = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

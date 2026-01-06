@@ -63,6 +63,8 @@ public class RunningController {
             session.setSplits(dto.getSplits());
             session.setIsComplete(dto.getIsComplete());
             session.setThumbnail(dto.getThumbnail());
+            session.setCourseId(dto.getCourseId());
+            session.setCourseCompleted(dto.getCourseCompleted() != null ? dto.getCourseCompleted() : false);
 
             // 저장
             RunningSession saved = runningSessionRepository.save(session);
@@ -220,6 +222,29 @@ public class RunningController {
         }
     }
 
+    /**
+     * 특정 코스의 따라 달리기 기록 조회
+     */
+    @GetMapping("/course/{courseId}/attempts")
+    public ResponseEntity<List<RunningSessionDTO>> getCourseAttempts(
+            @PathVariable Long courseId,
+            @RequestParam Long userId) {
+        try {
+            List<RunningSession> sessions = runningSessionRepository
+                    .findByCourseIdAndUserIdOrderByCreatedAtDesc(courseId, userId);
+
+            List<RunningSessionDTO> dtos = sessions.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching course attempts: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // Entity -> DTO 변환
     private RunningSessionDTO convertToDTO(RunningSession session) {
         RunningSessionDTO dto = new RunningSessionDTO();
@@ -238,6 +263,8 @@ public class RunningController {
         dto.setSplits(session.getSplits());
         dto.setIsComplete(session.getIsComplete());
         dto.setThumbnail(session.getThumbnail());
+        dto.setCourseId(session.getCourseId());
+        dto.setCourseCompleted(session.getCourseCompleted());
 
         // createdAt을 timestamp(epoch milliseconds)로 변환
         if (session.getCreatedAt() != null) {

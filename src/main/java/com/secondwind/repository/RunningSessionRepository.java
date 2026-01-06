@@ -30,4 +30,7 @@ public interface RunningSessionRepository extends JpaRepository<RunningSession, 
             "WHERE cm.crewId = :crewId AND cm.status = 'APPROVED') " +
             "AND r.isComplete = true")
     Double sumDistanceByCrewMembers(@Param("crewId") Long crewId);
+
+    // 특정 코스의 따라 달리기 기록 조회
+    List<RunningSession> findByCourseIdAndUserIdOrderByCreatedAtDesc(Long courseId, Long userId);
 }

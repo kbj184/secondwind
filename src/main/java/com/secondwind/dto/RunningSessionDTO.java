@@ -20,4 +20,6 @@ public class RunningSessionDTO {
     private Boolean isComplete;
     private Long timestamp; // 타임스탬프 추가
     private String thumbnail; // 썸네일 URL 추가
+    private Long courseId; // 따라 달리기 코스 ID
+    private Boolean courseCompleted; // 코스 완주 여부
 }
