@@ -1,12 +1,15 @@
 package com.secondwind.controller;
 
 import com.secondwind.dto.CrewCourseDTO;
+import com.secondwind.dto.CrewCourseCommentDTO;
 import com.secondwind.entity.CrewCourse;
+import com.secondwind.entity.CrewCourseComment;
 import com.secondwind.entity.CrewMember;
 import com.secondwind.entity.UserAuth;
 import com.secondwind.entity.CrewCourseLike;
 import com.secondwind.repository.CrewCourseLikeRepository;
 import com.secondwind.repository.CrewCourseRepository;
+import com.secondwind.repository.CrewCourseCommentRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.UserRepository;
 import java.util.Optional;
@@ -28,6 +31,7 @@ public class CrewCourseController {
     private final CrewMemberRepository crewMemberRepository;
     private final UserRepository userRepository;
     private final CrewCourseLikeRepository crewCourseLikeRepository;
+    private final CrewCourseCommentRepository crewCourseCommentRepository;
 
     @GetMapping
     public ResponseEntity<List<CrewCourseDTO>> getCourses(@PathVariable Long crewId, Authentication authentication) {
@@ -242,5 +246,121 @@ public class CrewCourseController {
             crewCourseLikeRepository.save(like);
             return ResponseEntity.ok("좋아요 성공");
         }
+    }
+
+    // 댓글 조회
+    @GetMapping("/{courseId}/comments")
+    public ResponseEntity<List<CrewCourseCommentDTO>> getComments(
+            @PathVariable Long crewId,
+            @PathVariable Long courseId) {
+
+        List<CrewCourseComment> comments = crewCourseCommentRepository.findByCourseIdOrderByCreatedAtDesc(courseId);
+
+        List<CrewCourseCommentDTO> commentDTOs = comments.stream().map(comment -> {
+            CrewCourseCommentDTO dto = new CrewCourseCommentDTO();
+            dto.setId(comment.getId());
+            dto.setCourseId(comment.getCourseId());
+            dto.setAuthorId(comment.getAuthorId());
+            dto.setContent(comment.getContent());
+            dto.setCreatedAt(comment.getCreatedAt());
+            dto.setUpdatedAt(comment.getUpdatedAt());
+
+            // Get author info
+            UserAuth author = userRepository.findById(comment.getAuthorId()).orElse(null);
+            if (author != null) {
+                dto.setAuthorNickname(author.getNickname());
+                // Parse profile image if exists
+                try {
+                    if (author.getNicknameImage() != null && !author.getNicknameImage().isEmpty()) {
+                        dto.setAuthorImage(author.getNicknameImage());
+                    }
+                } catch (Exception e) {
+                    // Ignore parsing errors
+                }
+            }
+
+            return dto;
+        }).collect(Collectors.toList());
+
+        return ResponseEntity.ok(commentDTOs);
+    }
+
+    // 댓글 작성
+    @PostMapping("/{courseId}/comments")
+    @Transactional
+    public ResponseEntity<?> createComment(
+            @PathVariable Long crewId,
+            @PathVariable Long courseId,
+            @RequestBody CrewCourseCommentDTO commentDTO,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("인증이 필요합니다.");
+        }
+
+        String email = authentication.getName();
+        UserAuth user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(401).body("사용자를 찾을 수 없습니다.");
+        }
+
+        // Check if course exists
+        boolean courseExists = crewCourseRepository.existsById(courseId);
+        if (!courseExists) {
+            return ResponseEntity.notFound().build();
+        }
+
+        CrewCourseComment comment = new CrewCourseComment();
+        comment.setCourseId(courseId);
+        comment.setAuthorId(user.getId());
+        comment.setContent(commentDTO.getContent());
+
+        CrewCourseComment saved = crewCourseCommentRepository.save(comment);
+
+        CrewCourseCommentDTO responseDTO = new CrewCourseCommentDTO();
+        responseDTO.setId(saved.getId());
+        responseDTO.setCourseId(saved.getCourseId());
+        responseDTO.setAuthorId(saved.getAuthorId());
+        responseDTO.setAuthorNickname(user.getNickname());
+        responseDTO.setAuthorImage(user.getNicknameImage());
+        responseDTO.setContent(saved.getContent());
+        responseDTO.setCreatedAt(saved.getCreatedAt());
+        responseDTO.setUpdatedAt(saved.getUpdatedAt());
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    // 댓글 삭제
+    @DeleteMapping("/{courseId}/comments/{commentId}")
+    @Transactional
+    public ResponseEntity<?> deleteComment(
+            @PathVariable Long crewId,
+            @PathVariable Long courseId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("인증이 필요합니다.");
+        }
+
+        String email = authentication.getName();
+        UserAuth user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(401).body("사용자를 찾을 수 없습니다.");
+        }
+
+        CrewCourseComment comment = crewCourseCommentRepository.findById(commentId).orElse(null);
+        if (comment == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Only author can delete
+        if (!comment.getAuthorId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("댓글 작성자만 삭제할 수 있습니다.");
+        }
+
+        crewCourseCommentRepository.deleteById(commentId);
+
+        return ResponseEntity.ok().build();
     }
 }
