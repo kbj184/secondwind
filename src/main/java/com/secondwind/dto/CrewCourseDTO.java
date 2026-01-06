@@ -23,4 +23,7 @@ public class CrewCourseDTO {
     // Creator info
     private String creatorNickname;
     private String creatorProfileImage;
+
+    private long likeCount;
+    private boolean liked;
 }

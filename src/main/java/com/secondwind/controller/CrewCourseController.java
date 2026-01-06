@@ -4,9 +4,12 @@ import com.secondwind.dto.CrewCourseDTO;
 import com.secondwind.entity.CrewCourse;
 import com.secondwind.entity.CrewMember;
 import com.secondwind.entity.UserAuth;
+import com.secondwind.entity.CrewCourseLike;
+import com.secondwind.repository.CrewCourseLikeRepository;
 import com.secondwind.repository.CrewCourseRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.UserRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,10 +27,18 @@ public class CrewCourseController {
     private final CrewCourseRepository crewCourseRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final UserRepository userRepository;
+    private final CrewCourseLikeRepository crewCourseLikeRepository;
 
     @GetMapping
-    public ResponseEntity<List<CrewCourseDTO>> getCourses(@PathVariable Long crewId) {
+    public ResponseEntity<List<CrewCourseDTO>> getCourses(@PathVariable Long crewId, Authentication authentication) {
         List<CrewCourse> courses = crewCourseRepository.findByCrewIdOrderByCreatedAtDesc(crewId);
+
+        UserAuth currentUser = null;
+        if (authentication != null) {
+            String email = authentication.getName();
+            currentUser = userRepository.findByEmail(email);
+        }
+        final UserAuth finalCurrentUser = currentUser;
 
         List<CrewCourseDTO> courseDTOs = courses.stream().map(course -> {
             CrewCourseDTO dto = new CrewCourseDTO();
@@ -49,6 +60,13 @@ public class CrewCourseController {
                 dto.setCreatorProfileImage(null); // UserAuth doesn't have profileImage
             }
 
+            // Like info
+            dto.setLikeCount(crewCourseLikeRepository.countByCourseId(course.getId()));
+            if (finalCurrentUser != null) {
+                dto.setLiked(
+                        crewCourseLikeRepository.existsByCourseIdAndUserId(course.getId(), finalCurrentUser.getId()));
+            }
+
             return dto;
         }).collect(Collectors.toList());
 
@@ -58,7 +76,8 @@ public class CrewCourseController {
     @GetMapping("/{courseId}")
     public ResponseEntity<CrewCourseDTO> getCourse(
             @PathVariable Long crewId,
-            @PathVariable Long courseId) {
+            @PathVariable Long courseId,
+            Authentication authentication) {
 
         CrewCourse course = crewCourseRepository.findByIdAndCrewId(courseId, crewId)
                 .orElse(null);
@@ -84,6 +103,16 @@ public class CrewCourseController {
         if (creator != null) {
             dto.setCreatorNickname(creator.getNickname());
             dto.setCreatorProfileImage(null);
+        }
+
+        // Like info
+        dto.setLikeCount(crewCourseLikeRepository.countByCourseId(course.getId()));
+        if (authentication != null) {
+            String email = authentication.getName();
+            UserAuth user = userRepository.findByEmail(email);
+            if (user != null) {
+                dto.setLiked(crewCourseLikeRepository.existsByCourseIdAndUserId(course.getId(), user.getId()));
+            }
         }
 
         return ResponseEntity.ok(dto);
@@ -174,5 +203,44 @@ public class CrewCourseController {
         crewCourseRepository.deleteById(courseId);
 
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{courseId}/like")
+    @Transactional
+    public ResponseEntity<?> toggleLike(
+            @PathVariable Long crewId,
+            @PathVariable Long courseId,
+            Authentication authentication) {
+
+        if (authentication == null) {
+            return ResponseEntity.status(401).body("인증이 필요합니다.");
+        }
+
+        String email = authentication.getName();
+        UserAuth user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.status(401).body("사용자를 찾을 수 없습니다.");
+        }
+
+        // Check course existence
+        boolean courseExists = crewCourseRepository.existsById(courseId);
+        if (!courseExists) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Check if already liked
+        Optional<CrewCourseLike> existingLike = crewCourseLikeRepository.findByCourseIdAndUserId(courseId,
+                user.getId());
+
+        if (existingLike.isPresent()) {
+            crewCourseLikeRepository.delete(existingLike.get());
+            return ResponseEntity.ok("좋아요 취소");
+        } else {
+            CrewCourseLike like = new CrewCourseLike();
+            like.setCourseId(courseId);
+            like.setUserId(user.getId());
+            crewCourseLikeRepository.save(like);
+            return ResponseEntity.ok("좋아요 성공");
+        }
     }
 }
