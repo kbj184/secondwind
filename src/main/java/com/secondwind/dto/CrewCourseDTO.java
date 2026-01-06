@@ -13,6 +13,7 @@ public class CrewCourseDTO {
     private Long crewId;
     private Long userId;
     private String name;
+    private String title;
     private String description;
     private Double distance;
     private String routeData;

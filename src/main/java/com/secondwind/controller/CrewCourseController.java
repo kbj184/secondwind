@@ -35,6 +35,7 @@ public class CrewCourseController {
             dto.setCrewId(course.getCrewId());
             dto.setUserId(course.getUserId());
             dto.setName(course.getName());
+            dto.setTitle(course.getTitle());
             dto.setDescription(course.getDescription());
             dto.setDistance(course.getDistance());
             dto.setRouteData(course.getRouteData());
@@ -71,6 +72,7 @@ public class CrewCourseController {
         dto.setCrewId(course.getCrewId());
         dto.setUserId(course.getUserId());
         dto.setName(course.getName());
+        dto.setTitle(course.getTitle());
         dto.setDescription(course.getDescription());
         dto.setDistance(course.getDistance());
         dto.setRouteData(course.getRouteData());
@@ -114,6 +116,7 @@ public class CrewCourseController {
         course.setCrewId(crewId);
         course.setUserId(user.getId());
         course.setName(courseDTO.getName());
+        course.setTitle(courseDTO.getTitle());
         course.setDescription(courseDTO.getDescription());
         course.setDistance(courseDTO.getDistance());
         course.setRouteData(courseDTO.getRouteData());
@@ -126,6 +129,7 @@ public class CrewCourseController {
         responseDTO.setCrewId(saved.getCrewId());
         responseDTO.setUserId(saved.getUserId());
         responseDTO.setName(saved.getName());
+        responseDTO.setTitle(saved.getTitle());
         responseDTO.setDescription(saved.getDescription());
         responseDTO.setDistance(saved.getDistance());
         responseDTO.setRouteData(saved.getRouteData());

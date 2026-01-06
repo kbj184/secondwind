@@ -24,6 +24,9 @@ public class CrewCourse {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(length = 200)
+    private String title;
+
     @Column(length = 500)
     private String description;
 
