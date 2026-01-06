@@ -12,6 +12,7 @@ import com.secondwind.repository.CrewCourseRepository;
 import com.secondwind.repository.CrewCourseCommentRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.UserRepository;
+import com.secondwind.repository.RunningSessionRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,7 @@ public class CrewCourseController {
     private final UserRepository userRepository;
     private final CrewCourseLikeRepository crewCourseLikeRepository;
     private final CrewCourseCommentRepository crewCourseCommentRepository;
+    private final RunningSessionRepository runningSessionRepository;
 
     @GetMapping
     public ResponseEntity<List<CrewCourseDTO>> getCourses(@PathVariable Long crewId, Authentication authentication) {
@@ -70,6 +72,8 @@ public class CrewCourseController {
                 dto.setLiked(
                         crewCourseLikeRepository.existsByCourseIdAndUserId(course.getId(), finalCurrentUser.getId()));
             }
+            // Run count
+            dto.setRunCount(runningSessionRepository.countByCourseId(course.getId()));
 
             return dto;
         }).collect(Collectors.toList());
@@ -118,6 +122,8 @@ public class CrewCourseController {
                 dto.setLiked(crewCourseLikeRepository.existsByCourseIdAndUserId(course.getId(), user.getId()));
             }
         }
+        // Run count
+        dto.setRunCount(runningSessionRepository.countByCourseId(course.getId()));
 
         return ResponseEntity.ok(dto);
     }

@@ -15,6 +15,8 @@ public interface RunningSessionRepository extends JpaRepository<RunningSession, 
     // 사용자 ID로 모든 세션 조회
     List<RunningSession> findByUserIdOrderByCreatedAtDesc(Long userId);
 
+    long countByCourseId(Long courseId);
+
     // 세션 ID로 조회
     Optional<RunningSession> findBySessionId(String sessionId);
 

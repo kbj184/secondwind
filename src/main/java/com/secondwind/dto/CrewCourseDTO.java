@@ -25,5 +25,6 @@ public class CrewCourseDTO {
     private String creatorProfileImage;
 
     private long likeCount;
+    private long runCount;
     private boolean liked;
 }
