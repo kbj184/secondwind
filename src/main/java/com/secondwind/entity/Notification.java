@@ -1,0 +1,44 @@
+package com.secondwind.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Getter
+@Setter
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "notification")
+public class Notification {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private UserAuth user;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private NotificationType type;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
+    private String message;
+
+    private String relatedUrl; // Store the direct URL or relevant ID
+
+    @Column(name = "is_read")
+    private boolean isRead = false;
+
+    @CreatedDate
+    @Column(name = "created_date", updatable = false)
+    private LocalDateTime createdDate;
+}
