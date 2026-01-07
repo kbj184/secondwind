@@ -2,29 +2,53 @@ package com.secondwind.service;
 
 import com.google.firebase.messaging.*;
 import com.secondwind.entity.NotificationType;
+import com.secondwind.entity.UserAuth;
 import com.secondwind.entity.UserFcmToken;
 import com.secondwind.repository.UserFcmTokenRepository;
+import com.secondwind.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class FcmService {
 
     private final UserFcmTokenRepository tokenRepository;
+    private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
-    public FcmService(UserFcmTokenRepository tokenRepository) {
+    public FcmService(UserFcmTokenRepository tokenRepository, NotificationService notificationService,
+            UserRepository userRepository) {
         this.tokenRepository = tokenRepository;
+        this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     /**
      * Send notification to a single user
      */
     public void sendToUser(Long userId, String title, String body, NotificationType type, Map<String, String> data) {
+        // 1. Save notification to DB (regardless of token existence)
+        try {
+            UserAuth user = userRepository.findById(userId).orElse(null);
+            if (user != null) {
+                String relatedUrl = type.getRouteTemplate();
+                if (data != null) {
+                    for (Map.Entry<String, String> entry : data.entrySet()) {
+                        relatedUrl = relatedUrl.replace("{" + entry.getKey() + "}", entry.getValue());
+                    }
+                }
+                notificationService.createNotification(user, type, title, body, relatedUrl);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Failed to save notification to DB: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        // 2. Send Push Notification. If no tokens, just return.
         List<UserFcmToken> tokens = tokenRepository.findByUserId(userId);
 
         if (tokens.isEmpty()) {
@@ -49,6 +73,8 @@ public class FcmService {
 
     /**
      * Send notification to all users
+     * Note: This currently only sends PUSH to devices in DB.
+     * It does not create DB notifications for all users to avoid massive inserts.
      */
     public void sendToAll(String title, String body, NotificationType type, Map<String, String> data) {
         List<UserFcmToken> allTokens = tokenRepository.findAll();
@@ -77,8 +103,9 @@ public class FcmService {
             dataPayload.put("type", type.name());
             dataPayload.put("route", type.getRouteTemplate());
 
-            // Build notification
-            Notification notification = Notification.builder()
+            // Build notification (Firebase class)
+            com.google.firebase.messaging.Notification firebaseNotification = com.google.firebase.messaging.Notification
+                    .builder()
                     .setTitle(title)
                     .setBody(body)
                     .build();
@@ -86,7 +113,7 @@ public class FcmService {
             // Build message
             Message message = Message.builder()
                     .setToken(token)
-                    .setNotification(notification)
+                    .setNotification(firebaseNotification)
                     .putAllData(dataPayload)
                     .setWebpushConfig(WebpushConfig.builder()
                             .setNotification(WebpushNotification.builder()
