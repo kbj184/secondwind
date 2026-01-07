@@ -148,8 +148,18 @@ public class FcmService {
     @Transactional
     public void saveToken(Long userId, String token, String deviceType) {
         // Check if token already exists
-        if (tokenRepository.existsByToken(token)) {
-            System.out.println("ℹ️ Token already exists, skipping save");
+        UserFcmToken existingToken = tokenRepository.findByToken(token).orElse(null);
+
+        if (existingToken != null) {
+            if (!existingToken.getUserId().equals(userId)) {
+                // Token exists but belongs to a different user (or previous session)
+                // Update ownership to current user
+                existingToken.setUserId(userId);
+                tokenRepository.save(existingToken);
+                System.out.println("✅ Updated FCM token ownership to user: " + userId);
+            } else {
+                System.out.println("ℹ️ Token already exists for this user, skipping save");
+            }
             return;
         }
 
