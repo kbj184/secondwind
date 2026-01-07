@@ -25,6 +25,12 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew clean bootJar
 
+    # 1.5. Firebase 서비스 계정 파일 생성
+    - name: Create Firebase Service Account JSON
+      run: |
+        mkdir -p build/libs/resources
+        echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}' > build/libs/resources/firebase-service-account.json
+
     # 2. 빌드된 JAR 파일을 EC2로 전송 (SCP)
     - name: Copy JAR to EC2
       uses: appleboy/scp-action@master
@@ -35,6 +41,17 @@ jobs:
         source: "build/libs/*.jar"
         target: "/home/ec2-user"
         strip_components: 2
+
+    # 2.5. Firebase 서비스 계정 파일을 EC2로 전송
+    - name: Copy Firebase Service Account to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "build/libs/resources/firebase-service-account.json"
+        target: "/home/ec2-user"
+        strip_components: 3
 
     # 3. EC2에서 서버 재시작 (SSH)
     - name: Deploy to EC2
@@ -60,6 +77,10 @@ jobs:
           echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> .env.prod
           echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> .env.prod
           echo "ALLOWED_ORIGINS=https://llrun.shop,https://www.llrun.shop,https://main.d2f7uw4hiwwlz7.amplifyapp.com" >> .env.prod
+          
+          # Firebase 환경 변수 추가
+          echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env.prod
+          echo "FIREBASE_SERVICE_ACCOUNT_PATH=/home/ec2-user/firebase-service-account.json" >> .env.prod
           
           # 3. 시스템 서비스 재시작 (가장 가벼운 작업)
           sudo systemctl restart running

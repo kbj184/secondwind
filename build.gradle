@@ -39,6 +39,9 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-impl:0.12.3'
     implementation 'io.jsonwebtoken:jjwt-jackson:0.12.3'
     implementation 'me.paulschwarz:spring-dotenv:5.0.1'
+    
+    // Firebase Cloud Messaging
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
 }
 
 tasks.named('test') {
