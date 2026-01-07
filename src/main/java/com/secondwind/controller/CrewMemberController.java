@@ -132,6 +132,21 @@ public class CrewMemberController {
         response.setNickname(userAuth.getNickname());
         response.setNicknameImage(userAuth.getNicknameImage());
 
+        // Send notification to Captain if status is PENDING
+        if ("PENDING".equals(savedMember.getStatus())) {
+            try {
+                fcmService.sendToUser(
+                        crewEntity.getCaptainId(),
+                        "크루 가입 요청",
+                        userAuth.getNickname() + "님이 " + crewEntity.getName() + " 크루 가입을 신청했습니다.",
+                        NotificationType.CREW_JOIN_REQUEST,
+                        Map.of("crewId", crewId.toString()));
+            } catch (Exception e) {
+                System.err.println("Failed to send join request notification: " + e.getMessage());
+                // Don't fail the request just because notification failed
+            }
+        }
+
         return response;
     }
 
