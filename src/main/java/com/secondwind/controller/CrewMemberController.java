@@ -6,10 +6,13 @@ import com.secondwind.entity.CrewMember;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.UserRepository;
+import com.secondwind.service.FcmService;
+import com.secondwind.entity.NotificationType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -19,13 +22,16 @@ public class CrewMemberController {
     private final CrewMemberRepository crewMemberRepository;
     private final CrewRepository crewRepository;
     private final UserRepository userRepository;
+    private final FcmService fcmService;
 
     public CrewMemberController(CrewMemberRepository crewMemberRepository,
             CrewRepository crewRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            FcmService fcmService) {
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
         this.userRepository = userRepository;
+        this.fcmService = fcmService;
     }
 
     @GetMapping("/{crewId}/members")
@@ -197,6 +203,18 @@ public class CrewMemberController {
             response.setNicknameImage(memberUser.getNicknameImage());
         }
 
+        // Send FCM notification
+        try {
+            fcmService.sendToUser(
+                    userId,
+                    "크루 가입 승인",
+                    crew.getName() + " 크루에 가입되었습니다!",
+                    NotificationType.CREW_JOIN_APPROVED,
+                    Map.of("crewId", crewId.toString()));
+        } catch (Exception e) {
+            System.err.println("Failed to send approval notification: " + e.getMessage());
+        }
+
         return response;
     }
 
@@ -228,6 +246,18 @@ public class CrewMemberController {
 
         // Option 1: Delete the member
         crewMemberRepository.delete(member);
+
+        // Send FCM notification
+        try {
+            fcmService.sendToUser(
+                    userId,
+                    "크루 가입 거절",
+                    crew.getName() + " 크루 가입이 거절되었습니다.",
+                    NotificationType.CREW_JOIN_REJECTED,
+                    Map.of());
+        } catch (Exception e) {
+            System.err.println("Failed to send rejection notification: " + e.getMessage());
+        }
 
         // Option 2: Set status to REJECTED (uncomment if you prefer this)
         // member.setStatus("REJECTED");

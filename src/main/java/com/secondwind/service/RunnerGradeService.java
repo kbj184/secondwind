@@ -10,17 +10,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class RunnerGradeService {
 
     private final UserRepository userRepository;
     private final RunningSessionRepository runningSessionRepository;
+    private final FcmService fcmService;
 
     public RunnerGradeService(UserRepository userRepository,
-            RunningSessionRepository runningSessionRepository) {
+            RunningSessionRepository runningSessionRepository,
+            FcmService fcmService) {
         this.userRepository = userRepository;
         this.runningSessionRepository = runningSessionRepository;
+        this.fcmService = fcmService;
     }
 
     /**
@@ -57,6 +61,19 @@ public class RunnerGradeService {
 
             user.setRunnerGrade(achievedGrade);
             userRepository.save(user);
+
+            // Send FCM notification
+            try {
+                fcmService.sendToUser(
+                        userId,
+                        "러너 등급 승급!",
+                        "축하합니다! " + achievedGrade.getDisplayName() + " 등급으로 승급했습니다!",
+                        com.secondwind.entity.NotificationType.RUNNER_GRADE_UPGRADE,
+                        Map.of());
+            } catch (Exception e) {
+                System.err.println("Failed to send grade upgrade notification: " + e.getMessage());
+            }
+
             return achievedGrade;
         }
 
