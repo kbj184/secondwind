@@ -29,10 +29,10 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String message;
 
     private String relatedUrl; // Store the direct URL or relevant ID

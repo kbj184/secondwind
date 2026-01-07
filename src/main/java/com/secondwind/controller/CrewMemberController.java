@@ -205,14 +205,16 @@ public class CrewMemberController {
 
         // Send FCM notification
         try {
+            Long targetUserId = updatedMember.getUserId();
             fcmService.sendToUser(
-                    userId,
+                    targetUserId,
                     "크루 가입 승인",
                     crew.getName() + " 크루에 가입되었습니다!",
                     NotificationType.CREW_JOIN_APPROVED,
                     Map.of("crewId", crewId.toString()));
         } catch (Exception e) {
             System.err.println("Failed to send approval notification: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return response;
