@@ -47,6 +47,19 @@ public class CrewController {
         this.runningSessionRepository = runningSessionRepository;
     }
 
+    @GetMapping("/check-name")
+    public java.util.Map<String, Object> checkCrewName(@RequestParam String name) {
+        boolean exists = crewRepository.existsByName(name);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("available", !exists);
+        response.put("message", exists
+                ? "이미 사용 중인 크루 이름입니다."
+                : "사용 가능한 크루 이름입니다.");
+
+        return response;
+    }
+
     @PutMapping("/{crewId}")
     @org.springframework.transaction.annotation.Transactional
     public CrewDTO updateCrew(@PathVariable Long crewId, @RequestBody CrewDTO crewDTO) {
@@ -68,8 +81,13 @@ public class CrewController {
         // 크루 이름 변경 시 중복 체크 및 제한 체크
         if (crewDTO.getName() != null && !crewDTO.getName().equals(crew.getName())) {
             // 1. 중복 체크
-            Optional<Crew> existingCrew = crewRepository.findByName(crewDTO.getName());
-            if (existingCrew.isPresent() && !existingCrew.get().getId().equals(crewId)) {
+            List<Crew> existingCrews = crewRepository.findByName(crewDTO.getName());
+
+            // 다른 크루가 같은 이름을 쓰고 있는지 확인
+            boolean isDuplicate = existingCrews.stream()
+                    .anyMatch(c -> !c.getId().equals(crewId));
+
+            if (isDuplicate) {
                 throw new RuntimeException("이미 사용 중인 크루 이름입니다.");
             }
 
@@ -156,8 +174,8 @@ public class CrewController {
         }
 
         // 크루 이름 중복 체크
-        Optional<Crew> existingCrew = crewRepository.findByName(crewDTO.getName());
-        if (existingCrew.isPresent()) {
+        boolean exists = crewRepository.existsByName(crewDTO.getName());
+        if (exists) {
             throw new RuntimeException("이미 사용 중인 크루 이름입니다.");
         }
 

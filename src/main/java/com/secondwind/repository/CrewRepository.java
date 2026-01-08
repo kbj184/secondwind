@@ -10,7 +10,11 @@ import java.util.List;
 public interface CrewRepository extends JpaRepository<Crew, Long> {
     Optional<Crew> findByCaptainId(Long captainId);
 
-    Optional<Crew> findByName(String name);
+    // 안전하게 List로 반환 (중복 데이터가 있을 경우 대비)
+    List<Crew> findByName(String name);
+
+    // 존재 여부만 빠르게 확인
+    boolean existsByName(String name);
 
     @Query(value = """
             SELECT DISTINCT c.*
