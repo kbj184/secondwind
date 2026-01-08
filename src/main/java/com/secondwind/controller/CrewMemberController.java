@@ -355,4 +355,119 @@ public class CrewMemberController {
 
         return response;
     }
+
+    @PutMapping("/{crewId}/members/{memberId}/role")
+    @org.springframework.transaction.annotation.Transactional
+    public CrewMemberDTO updateMemberRole(@PathVariable Long crewId, @PathVariable Long memberId,
+            @RequestBody Map<String, String> request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Check if requester is the captain
+        var crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can update member roles");
+        }
+
+        // Find the member
+        CrewMember member = crewMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        if (!member.getCrewId().equals(crewId)) {
+            throw new RuntimeException("Member does not belong to this crew");
+        }
+
+        String newRole = request.get("role");
+        if (newRole == null || (!newRole.equals("member") && !newRole.equals("vice_captain"))) {
+            throw new RuntimeException("Invalid role");
+        }
+
+        // Captain role cannot be changed this way (needs ownership transfer)
+        if ("captain".equals(member.getRole())) {
+            throw new RuntimeException("Cannot change captain's role directly");
+        }
+
+        member.setRole(newRole);
+        CrewMember updatedMember = crewMemberRepository.save(member);
+
+        // Prepare response
+        var memberUser = userRepository.findById(updatedMember.getUserId()).orElse(null);
+        CrewMemberDTO response = new CrewMemberDTO();
+        response.setId(updatedMember.getId());
+        response.setUserId(updatedMember.getUserId());
+        response.setRole(updatedMember.getRole());
+        response.setStatus(updatedMember.getStatus());
+        response.setJoinedAt(updatedMember.getJoinedAt().toString());
+        if (memberUser != null) {
+            response.setNickname(memberUser.getNickname());
+            response.setNicknameImage(memberUser.getNicknameImage());
+        }
+
+        // Notification
+        try {
+            String roleName = "vice_captain".equals(newRole) ? "부크루장" : "일반 멤버";
+            fcmService.sendToUser(
+                    updatedMember.getUserId(),
+                    "크루 등급 변경",
+                    crew.getName() + " 크루에서 " + roleName + "(으)로 변경되었습니다.",
+                    NotificationType.CREW_JOIN_APPROVED, // Reusing appropriate type or add new one
+                    Map.of("crewId", crewId.toString()));
+        } catch (Exception e) {
+            System.err.println("Failed to send role update notification: " + e.getMessage());
+        }
+
+        return response;
+    }
+
+    @DeleteMapping("/{crewId}/members/{memberId}/kick")
+    @org.springframework.transaction.annotation.Transactional
+    public void kickMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Check if requester is the captain
+        var crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can kick members");
+        }
+
+        // Find the member
+        CrewMember member = crewMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        if (!member.getCrewId().equals(crewId)) {
+            throw new RuntimeException("Member does not belong to this crew");
+        }
+
+        // Cannot kick self (captain)
+        if (member.getUserId().equals(userAuth.getId())) {
+            throw new RuntimeException("Cannot kick yourself");
+        }
+
+        crewMemberRepository.delete(member);
+
+        // Notification
+        try {
+            fcmService.sendToUser(
+                    member.getUserId(),
+                    "크루 강퇴 알림",
+                    crew.getName() + " 크루에서 강퇴되었습니다.",
+                    NotificationType.CREW_JOIN_REJECTED, // Using rejected type implies removal
+                    Map.of());
+        } catch (Exception e) {
+            System.err.println("Failed to send kick notification: " + e.getMessage());
+        }
+    }
 }
