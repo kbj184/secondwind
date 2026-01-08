@@ -61,4 +61,19 @@ public class NotificationController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserAuth user = userRepository.findByEmail(email);
+        if (user == null)
+            return ResponseEntity.status(401).build();
+
+        try {
+            notificationService.deleteNotification(id, user.getId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }
