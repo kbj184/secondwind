@@ -65,14 +65,49 @@ public class CrewController {
             throw new RuntimeException("Only captain can update crew");
         }
 
-        // 기본 정보 업데이트
-        if (crewDTO.getName() != null)
+        // 크루 이름 변경 시 중복 체크 및 제한 체크
+        if (crewDTO.getName() != null && !crewDTO.getName().equals(crew.getName())) {
+            // 1. 중복 체크
+            Optional<Crew> existingCrew = crewRepository.findByName(crewDTO.getName());
+            if (existingCrew.isPresent() && !existingCrew.get().getId().equals(crewId)) {
+                throw new RuntimeException("이미 사용 중인 크루 이름입니다.");
+            }
+
+            // 2. 변경 제한 체크
+            boolean isWithin7Days = java.time.temporal.ChronoUnit.DAYS.between(
+                    crew.getCreatedAt(), LocalDateTime.now()) <= 7;
+
+            if (!isWithin7Days) {
+                // 7일 이후: 마지막 변경으로부터 30일 체크
+                if (crew.getLastNameChangeDate() != null) {
+                    long daysSinceLastChange = java.time.temporal.ChronoUnit.DAYS.between(
+                            crew.getLastNameChangeDate(), LocalDateTime.now());
+
+                    if (daysSinceLastChange < 30) {
+                        throw new RuntimeException(
+                                "크루 이름은 30일에 1회만 변경 가능합니다. " +
+                                        (30 - daysSinceLastChange) + "일 후 변경 가능합니다.");
+                    }
+                }
+            }
+
+            // 3. 이름 변경 실행
+            String oldName = crew.getName();
             crew.setName(crewDTO.getName());
+            crew.setNameChangeCount((crew.getNameChangeCount() != null ? crew.getNameChangeCount() : 0) + 1);
+            crew.setLastNameChangeDate(LocalDateTime.now());
+
+            // 4. 모든 멤버에게 알림 (TODO: FCM 서비스 추가 시 구현)
+            // notifyNameChange(crewId, oldName, crewDTO.getName());
+        }
+
+        // 기타 필드 업데이트
         if (crewDTO.getDescription() != null)
             crew.setDescription(crewDTO.getDescription());
         if (crewDTO.getImageUrl() != null)
             crew.setImageUrl(crewDTO.getImageUrl());
-        // joinType 등 다른 필드도 필요하면 추가
+        if (crewDTO.getJoinType() != null)
+            crew.setJoinType(crewDTO.getJoinType());
 
         crewRepository.save(crew);
 
@@ -120,7 +155,11 @@ public class CrewController {
             throw new RuntimeException("User not found");
         }
 
-        // 중복 크루 생성 허용 - 제한 제거
+        // 크루 이름 중복 체크
+        Optional<Crew> existingCrew = crewRepository.findByName(crewDTO.getName());
+        if (existingCrew.isPresent()) {
+            throw new RuntimeException("이미 사용 중인 크루 이름입니다.");
+        }
 
         Crew crew = new Crew();
         crew.setName(crewDTO.getName());

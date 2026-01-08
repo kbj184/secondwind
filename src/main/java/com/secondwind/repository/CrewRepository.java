@@ -10,6 +10,8 @@ import java.util.List;
 public interface CrewRepository extends JpaRepository<Crew, Long> {
     Optional<Crew> findByCaptainId(Long captainId);
 
+    Optional<Crew> findByName(String name);
+
     @Query(value = """
             SELECT DISTINCT c.*
             FROM crews c
