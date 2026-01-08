@@ -39,6 +39,9 @@ public class CrewCourse {
     @Column(name = "map_thumbnail_url", length = 500)
     private String mapThumbnailUrl;
 
+    @Column(name = "is_official", nullable = false)
+    private Boolean isOfficial = false; // 공식 코스 여부
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

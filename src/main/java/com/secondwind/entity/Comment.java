@@ -24,6 +24,9 @@ public class Comment {
     @Column(columnDefinition = "LONGTEXT", nullable = false)
     private String content;
 
+    @Column(name = "is_filtered", nullable = false)
+    private Boolean isFiltered = false; // 관리자에 의한 필터링 여부
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

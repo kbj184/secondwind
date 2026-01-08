@@ -34,6 +34,9 @@ public class Post {
     @Column(name = "is_pinned", nullable = false)
     private Boolean isPinned = false; // 공지사항 여부
 
+    @Column(name = "is_filtered", nullable = false)
+    private Boolean isFiltered = false; // 관리자에 의한 필터링 여부
+
     @Column(name = "view_count", nullable = false)
     private Integer viewCount = 0;
 

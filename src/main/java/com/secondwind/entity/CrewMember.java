@@ -22,7 +22,7 @@ public class CrewMember {
     private Long userId;
 
     @Column(name = "role", nullable = false)
-    private String role; // "captain" or "member"
+    private String role; // "captain", "vice_captain", "member"
 
     @Column(name = "status", nullable = false)
     private String status = "APPROVED"; // "PENDING", "APPROVED", "REJECTED"

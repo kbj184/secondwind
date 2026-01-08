@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -167,7 +168,6 @@ public class BoardController {
         return convertToDTO(updatedPost);
     }
 
-    // 게시글 삭제
     @DeleteMapping("/posts/{postId}")
     public void deletePost(@PathVariable Long postId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -195,6 +195,46 @@ public class BoardController {
         }
 
         postRepository.delete(post);
+    }
+
+    // 게시글 필터링 (관리자 기능)
+    @PutMapping("/posts/{postId}/filter")
+    @Transactional
+    public ResponseEntity<?> filterPost(@PathVariable Long postId,
+            @RequestBody java.util.Map<String, Boolean> request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var user = userRepository.findByEmail(email);
+        if (user == null)
+            return ResponseEntity.status(401).build();
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        if (post.getCrewId() == null) {
+            return ResponseEntity.badRequest().body("Only crew posts can be filtered");
+        }
+
+        // Check permission (Captain or Vice Captain)
+        Crew crew = crewRepository.findById(post.getCrewId()).orElseThrow();
+        boolean isCaptain = crew.getCaptainId().equals(user.getId());
+        boolean isViceCaptain = false;
+
+        if (!isCaptain) {
+            var member = crewMemberRepository.findByCrewIdAndUserId(post.getCrewId(), user.getId());
+            if (member.isPresent() && "vice_captain".equals(member.get().getRole())) {
+                isViceCaptain = true;
+            }
+        }
+
+        if (!isCaptain && !isViceCaptain) {
+            return ResponseEntity.status(403).body("No permission");
+        }
+
+        Boolean isFiltered = request.get("isFiltered");
+        post.setIsFiltered(isFiltered);
+        postRepository.save(post);
+
+        return ResponseEntity.ok().build();
     }
 
     // 댓글 목록 조회
@@ -271,6 +311,48 @@ public class BoardController {
 
         // 댓글 수 감소
         postRepository.decrementCommentCount(comment.getPostId());
+    }
+
+    // 댓글 필터링 (관리자 기능)
+    @PutMapping("/comments/{commentId}/filter")
+    @Transactional
+    public ResponseEntity<?> filterComment(@PathVariable Long commentId,
+            @RequestBody java.util.Map<String, Boolean> request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var user = userRepository.findByEmail(email);
+        if (user == null)
+            return ResponseEntity.status(401).build();
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        Post post = postRepository.findById(comment.getPostId()).orElseThrow();
+
+        if (post.getCrewId() == null) {
+            return ResponseEntity.badRequest().body("Only crew comments can be filtered");
+        }
+
+        // Check permission (Captain or Vice Captain)
+        Crew crew = crewRepository.findById(post.getCrewId()).orElseThrow();
+        boolean isCaptain = crew.getCaptainId().equals(user.getId());
+        boolean isViceCaptain = false;
+
+        if (!isCaptain) {
+            var member = crewMemberRepository.findByCrewIdAndUserId(post.getCrewId(), user.getId());
+            if (member.isPresent() && "vice_captain".equals(member.get().getRole())) {
+                isViceCaptain = true;
+            }
+        }
+
+        if (!isCaptain && !isViceCaptain) {
+            return ResponseEntity.status(403).body("No permission");
+        }
+
+        Boolean isFiltered = request.get("isFiltered");
+        comment.setIsFiltered(isFiltered);
+        commentRepository.save(comment);
+
+        return ResponseEntity.ok().build();
     }
 
     // 게시글 좋아요

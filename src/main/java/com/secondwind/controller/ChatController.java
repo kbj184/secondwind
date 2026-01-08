@@ -34,7 +34,14 @@ public class ChatController {
         }
 
         Long roomId = chatService.getOrCreateChatRoom(currentUser.getId(), userId);
-        return ResponseEntity.ok(Map.of("roomId", roomId));
+
+        // Get other user info
+        UserAuth otherUser = userRepository.findById(userId).orElse(null);
+        String otherUserNickname = otherUser != null ? otherUser.getNickname() : "사용자";
+
+        return ResponseEntity.ok(Map.of(
+                "roomId", roomId,
+                "otherUserNickname", otherUserNickname));
     }
 
     /**
