@@ -16,6 +16,9 @@ public enum NotificationType {
     // Social notifications
     FOLLOW("팔로우", "/user/{userId}/profile"),
 
+    // Chat notifications
+    CHAT_MESSAGE("새 메시지", "/chat/{roomId}"),
+
     // System notifications
     SYSTEM_UPDATE("시스템 업데이트", "/"),
     EVENT_ANNOUNCEMENT("이벤트 공지", "/");
