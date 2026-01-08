@@ -438,7 +438,9 @@ public class BoardController {
         dto.setLikeCount(post.getLikeCount());
         dto.setCommentCount(post.getCommentCount());
         dto.setCreatedAt(post.getCreatedAt());
+        dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
+        dto.setIsFiltered(post.getIsFiltered());
 
         // 작성자 정보 추가
         var author = userRepository.findById(post.getAuthorId()).orElse(null);
@@ -471,7 +473,9 @@ public class BoardController {
         dto.setAuthorId(comment.getAuthorId());
         dto.setContent(comment.getContent());
         dto.setCreatedAt(comment.getCreatedAt());
+        dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
+        dto.setIsFiltered(comment.getIsFiltered());
 
         // 작성자 정보 추가
         var author = userRepository.findById(comment.getAuthorId()).orElse(null);

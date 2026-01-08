@@ -23,4 +23,5 @@ public class PostDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Boolean isLikedByCurrentUser; // 현재 사용자의 좋아요 여부
+    private Boolean isFiltered; // 관리자에 의한 필터링 여부
 }

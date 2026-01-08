@@ -19,4 +19,5 @@ public class CommentDTO {
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Boolean isFiltered;
 }
