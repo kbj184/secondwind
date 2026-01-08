@@ -92,6 +92,14 @@ public class CrewMemberController {
 
         var existingMember = crewMemberRepository.findByCrewIdAndUserId((long) crewId, userId);
         if (existingMember.isPresent()) {
+            String status = existingMember.get().getStatus();
+
+            // 강퇴당한 사용자는 재가입 불가
+            if ("KICKED".equals(status)) {
+                throw new RuntimeException("강퇴당한 크루에는 재가입할 수 없습니다. 크루장에게 문의하세요.");
+            }
+
+            // 이미 가입된 경우
             throw new RuntimeException("Already a member of this crew");
         }
 
@@ -456,7 +464,11 @@ public class CrewMemberController {
             throw new RuntimeException("Cannot kick yourself");
         }
 
-        crewMemberRepository.delete(member);
+        // 강퇴: 삭제 대신 KICKED 상태로 변경
+        member.setStatus("KICKED");
+        member.setRole("member"); // 역할 초기화
+        member.setIsPrimary(false); // 주 크루 해제
+        crewMemberRepository.save(member);
 
         // Notification
         try {
@@ -464,10 +476,57 @@ public class CrewMemberController {
                     member.getUserId(),
                     "크루 강퇴 알림",
                     crew.getName() + " 크루에서 강퇴되었습니다.",
-                    NotificationType.CREW_JOIN_REJECTED, // Using rejected type implies removal
+                    NotificationType.CREW_JOIN_REJECTED,
                     Map.of());
         } catch (Exception e) {
             System.err.println("Failed to send kick notification: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{crewId}/members/{memberId}/unkick")
+    @org.springframework.transaction.annotation.Transactional
+    public void unkickMember(@PathVariable Long crewId, @PathVariable Long memberId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        // Check if requester is the captain
+        var crew = crewRepository.findById(crewId)
+                .orElseThrow(() -> new RuntimeException("Crew not found"));
+
+        if (!crew.getCaptainId().equals(userAuth.getId())) {
+            throw new RuntimeException("Only captain can unkick members");
+        }
+
+        // Find the member
+        CrewMember member = crewMemberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
+        if (!member.getCrewId().equals(crewId)) {
+            throw new RuntimeException("Member does not belong to this crew");
+        }
+
+        if (!"KICKED".equals(member.getStatus())) {
+            throw new RuntimeException("Member is not kicked");
+        }
+
+        // 강퇴 해제: KICKED -> APPROVED
+        member.setStatus("APPROVED");
+        crewMemberRepository.save(member);
+
+        // Notification
+        try {
+            fcmService.sendToUser(
+                    member.getUserId(),
+                    "크루 강퇴 해제",
+                    crew.getName() + " 크루 강퇴가 해제되었습니다. 다시 가입할 수 있습니다.",
+                    NotificationType.CREW_JOIN_APPROVED,
+                    Map.of("crewId", crewId.toString()));
+        } catch (Exception e) {
+            System.err.println("Failed to send unkick notification: " + e.getMessage());
         }
     }
 
