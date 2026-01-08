@@ -201,7 +201,7 @@ public class BoardController {
     @PutMapping("/posts/{postId}/filter")
     @Transactional
     public ResponseEntity<?> filterPost(@PathVariable Long postId,
-            @RequestBody java.util.Map<String, Boolean> request) {
+            @RequestBody java.util.Map<String, Object> request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var user = userRepository.findByEmail(email);
         if (user == null)
@@ -230,7 +230,7 @@ public class BoardController {
             return ResponseEntity.status(403).body("No permission");
         }
 
-        Boolean isFiltered = request.get("isFiltered");
+        Boolean isFiltered = Boolean.TRUE.equals(request.get("isFiltered"));
         post.setIsFiltered(isFiltered);
         postRepository.save(post);
 
@@ -317,7 +317,7 @@ public class BoardController {
     @PutMapping("/comments/{commentId}/filter")
     @Transactional
     public ResponseEntity<?> filterComment(@PathVariable Long commentId,
-            @RequestBody java.util.Map<String, Boolean> request) {
+            @RequestBody java.util.Map<String, Object> request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         var user = userRepository.findByEmail(email);
         if (user == null)
@@ -348,7 +348,7 @@ public class BoardController {
             return ResponseEntity.status(403).body("No permission");
         }
 
-        Boolean isFiltered = request.get("isFiltered");
+        Boolean isFiltered = Boolean.TRUE.equals(request.get("isFiltered"));
         comment.setIsFiltered(isFiltered);
         commentRepository.save(comment);
 
