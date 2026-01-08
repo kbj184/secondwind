@@ -7,6 +7,7 @@ import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.service.FcmService;
+import com.secondwind.service.FollowService;
 import com.secondwind.entity.NotificationType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -23,15 +24,18 @@ public class CrewMemberController {
     private final CrewRepository crewRepository;
     private final UserRepository userRepository;
     private final FcmService fcmService;
+    private final FollowService followService;
 
     public CrewMemberController(CrewMemberRepository crewMemberRepository,
             CrewRepository crewRepository,
             UserRepository userRepository,
-            FcmService fcmService) {
+            FcmService fcmService,
+            FollowService followService) {
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
         this.userRepository = userRepository;
         this.fcmService = fcmService;
+        this.followService = followService;
     }
 
     @GetMapping("/{crewId}/members")
@@ -203,6 +207,24 @@ public class CrewMemberController {
 
         member.setStatus("APPROVED");
         CrewMember updatedMember = crewMemberRepository.save(member);
+
+        // AUTO-FOLLOW: Create mutual follows between new member and all existing
+        // approved members
+        List<CrewMember> approvedMembers = crewMemberRepository.findByCrewId(crewId).stream()
+                .filter(m -> "APPROVED".equals(m.getStatus()) && !m.getUserId().equals(userId))
+                .collect(Collectors.toList());
+
+        for (CrewMember existingMember : approvedMembers) {
+            try {
+                // New member follows existing member (silent)
+                followService.followUser(userId, existingMember.getUserId(), true);
+                // Existing member follows new member (silent)
+                followService.followUser(existingMember.getUserId(), userId, true);
+            } catch (Exception e) {
+                System.err.println("Failed to create auto-follow: " + e.getMessage());
+                // Continue even if auto-follow fails
+            }
+        }
 
         // Get user info for response
         var memberUser = userRepository.findById(updatedMember.getUserId()).orElse(null);

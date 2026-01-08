@@ -13,6 +13,9 @@ public enum NotificationType {
     FRIEND_RUNNING_RECORD("친구 러닝 기록", "/user/{userId}/profile"),
     COURSE_RECOMMENDATION("코스 추천", "/crew/detail/{crewId}/course/{courseId}"),
 
+    // Social notifications
+    FOLLOW("팔로우", "/user/{userId}/profile"),
+
     // System notifications
     SYSTEM_UPDATE("시스템 업데이트", "/"),
     EVENT_ANNOUNCEMENT("이벤트 공지", "/");
