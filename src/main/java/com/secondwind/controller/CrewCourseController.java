@@ -75,6 +75,9 @@ public class CrewCourseController {
             // Run count
             dto.setRunCount(runningSessionRepository.countByCourseId(course.getId()));
 
+            // Official status
+            dto.setIsOfficial(course.getIsOfficial());
+
             return dto;
         }).collect(Collectors.toList());
 
@@ -124,6 +127,9 @@ public class CrewCourseController {
         }
         // Run count
         dto.setRunCount(runningSessionRepository.countByCourseId(course.getId()));
+
+        // Official status
+        dto.setIsOfficial(course.getIsOfficial());
 
         return ResponseEntity.ok(dto);
     }

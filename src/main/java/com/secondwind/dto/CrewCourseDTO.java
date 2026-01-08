@@ -27,4 +27,5 @@ public class CrewCourseDTO {
     private long likeCount;
     private long runCount;
     private boolean liked;
+    private Boolean isOfficial; // 공식 코스 여부
 }
