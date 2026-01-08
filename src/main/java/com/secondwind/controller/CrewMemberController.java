@@ -8,6 +8,7 @@ import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.UserRepository;
 import com.secondwind.service.FcmService;
 import com.secondwind.service.FollowService;
+import com.secondwind.service.CrewPermissionService;
 import com.secondwind.entity.NotificationType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -25,17 +26,20 @@ public class CrewMemberController {
     private final UserRepository userRepository;
     private final FcmService fcmService;
     private final FollowService followService;
+    private final CrewPermissionService permissionService;
 
     public CrewMemberController(CrewMemberRepository crewMemberRepository,
             CrewRepository crewRepository,
             UserRepository userRepository,
             FcmService fcmService,
-            FollowService followService) {
+            FollowService followService,
+            CrewPermissionService permissionService) {
         this.crewMemberRepository = crewMemberRepository;
         this.crewRepository = crewRepository;
         this.userRepository = userRepository;
         this.fcmService = fcmService;
         this.followService = followService;
+        this.permissionService = permissionService;
     }
 
     @GetMapping("/{crewId}/members")
@@ -189,13 +193,11 @@ public class CrewMemberController {
             throw new RuntimeException("User not found");
         }
 
-        // Check if user is the captain
+        // Check if user is captain or vice captain
+        permissionService.requireManager(crewId, userAuth.getId());
+
         var crew = crewRepository.findById(crewId)
                 .orElseThrow(() -> new RuntimeException("Crew not found"));
-
-        if (!crew.getCaptainId().equals(userAuth.getId())) {
-            throw new RuntimeException("Only captain can approve members");
-        }
 
         // Find and approve the member
         CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
@@ -267,13 +269,11 @@ public class CrewMemberController {
             throw new RuntimeException("User not found");
         }
 
-        // Check if user is the captain
+        // Check if user is captain or vice captain
+        permissionService.requireManager(crewId, userAuth.getId());
+
         var crew = crewRepository.findById(crewId)
                 .orElseThrow(() -> new RuntimeException("Crew not found"));
-
-        if (!crew.getCaptainId().equals(userAuth.getId())) {
-            throw new RuntimeException("Only captain can reject members");
-        }
 
         // Find and delete the member (or set status to REJECTED)
         CrewMember member = crewMemberRepository.findByCrewIdAndUserId(crewId, userId)
@@ -469,5 +469,30 @@ public class CrewMemberController {
         } catch (Exception e) {
             System.err.println("Failed to send kick notification: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/{crewId}/my-role")
+    public Map<String, Object> getMyRole(@PathVariable Long crewId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var userAuth = userRepository.findByEmail(email);
+
+        if (userAuth == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        Long userId = userAuth.getId();
+        String role = permissionService.getMemberRole(crewId, userId);
+
+        boolean isCaptain = permissionService.isCaptain(crewId, userId);
+        boolean isViceCaptain = permissionService.isViceCaptain(crewId, userId);
+        boolean isManager = permissionService.isManager(crewId, userId);
+        boolean isMember = permissionService.isMember(crewId, userId);
+
+        return Map.of(
+                "role", role != null ? role : "none",
+                "isCaptain", isCaptain,
+                "isViceCaptain", isViceCaptain,
+                "isManager", isManager,
+                "isMember", isMember);
     }
 }

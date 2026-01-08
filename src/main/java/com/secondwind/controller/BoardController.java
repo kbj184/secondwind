@@ -12,6 +12,7 @@ import com.secondwind.repository.UserRepository;
 import com.secondwind.repository.CrewRepository;
 import com.secondwind.repository.CrewMemberRepository;
 import com.secondwind.repository.PostLikeRepository;
+import com.secondwind.service.CrewPermissionService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,19 +34,22 @@ public class BoardController {
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final PostLikeRepository postLikeRepository;
+    private final CrewPermissionService permissionService;
 
     public BoardController(PostRepository postRepository,
             CommentRepository commentRepository,
             UserRepository userRepository,
             CrewRepository crewRepository,
             CrewMemberRepository crewMemberRepository,
-            PostLikeRepository postLikeRepository) {
+            PostLikeRepository postLikeRepository,
+            CrewPermissionService permissionService) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
         this.crewRepository = crewRepository;
         this.crewMemberRepository = crewMemberRepository;
         this.postLikeRepository = postLikeRepository;
+        this.permissionService = permissionService;
     }
 
     // 게시글 목록 조회
@@ -103,13 +107,11 @@ public class BoardController {
             }
         }
 
-        // isPinned 권한 확인 (크루장만 가능)
+        // isPinned 권한 확인 (크루장 또는 부크루장)
         if (postDTO.getIsPinned() != null && postDTO.getIsPinned()) {
             if (postDTO.getCrewId() != null) {
-                Crew crew = crewRepository.findById(postDTO.getCrewId())
-                        .orElseThrow(() -> new RuntimeException("Crew not found"));
-                if (!crew.getCaptainId().equals(user.getId())) {
-                    throw new RuntimeException("Only captain can pin posts");
+                if (!permissionService.isManager(postDTO.getCrewId(), user.getId())) {
+                    throw new RuntimeException("Only captain or vice captain can pin posts");
                 }
             }
         }
@@ -159,9 +161,12 @@ public class BoardController {
         if (postDTO.getContent() != null)
             post.setContent(postDTO.getContent());
 
-        // isPinned는 크루장만 수정 가능
-        if (postDTO.getIsPinned() != null && isCaptain) {
-            post.setIsPinned(postDTO.getIsPinned());
+        // isPinned는 크루장 또는 부크루장만 수정 가능
+        if (postDTO.getIsPinned() != null) {
+            boolean isManager = post.getCrewId() != null && permissionService.isManager(post.getCrewId(), user.getId());
+            if (isManager) {
+                post.setIsPinned(postDTO.getIsPinned());
+            }
         }
 
         Post updatedPost = postRepository.save(post);
@@ -180,17 +185,11 @@ public class BoardController {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        // 권한 확인
+        // 권한 확인: 작성자, 크루장, 부크루장
         boolean isAuthor = post.getAuthorId().equals(user.getId());
-        boolean isCaptain = false;
-        if (post.getCrewId() != null) {
-            Crew crew = crewRepository.findById(post.getCrewId()).orElse(null);
-            if (crew != null) {
-                isCaptain = crew.getCaptainId().equals(user.getId());
-            }
-        }
+        boolean isManager = post.getCrewId() != null && permissionService.isManager(post.getCrewId(), user.getId());
 
-        if (!isAuthor && !isCaptain) {
+        if (!isAuthor && !isManager) {
             throw new RuntimeException("No permission to delete this post");
         }
 
@@ -215,18 +214,7 @@ public class BoardController {
         }
 
         // Check permission (Captain or Vice Captain)
-        Crew crew = crewRepository.findById(post.getCrewId()).orElseThrow();
-        boolean isCaptain = crew.getCaptainId().equals(user.getId());
-        boolean isViceCaptain = false;
-
-        if (!isCaptain) {
-            var member = crewMemberRepository.findByCrewIdAndUserId(post.getCrewId(), user.getId());
-            if (member.isPresent() && "vice_captain".equals(member.get().getRole())) {
-                isViceCaptain = true;
-            }
-        }
-
-        if (!isCaptain && !isViceCaptain) {
+        if (!permissionService.isManager(post.getCrewId(), user.getId())) {
             return ResponseEntity.status(403).body("No permission");
         }
 
@@ -302,8 +290,15 @@ public class BoardController {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
-        // 권한 확인: 작성자만
-        if (!comment.getAuthorId().equals(user.getId())) {
+        // 게시글 정보 가져오기
+        Post post = postRepository.findById(comment.getPostId()).orElse(null);
+
+        // 권한 확인: 작성자, 크루장, 부크루장
+        boolean isAuthor = comment.getAuthorId().equals(user.getId());
+        boolean isManager = post != null && post.getCrewId() != null &&
+                permissionService.isManager(post.getCrewId(), user.getId());
+
+        if (!isAuthor && !isManager) {
             throw new RuntimeException("No permission to delete this comment");
         }
 
@@ -333,18 +328,7 @@ public class BoardController {
         }
 
         // Check permission (Captain or Vice Captain)
-        Crew crew = crewRepository.findById(post.getCrewId()).orElseThrow();
-        boolean isCaptain = crew.getCaptainId().equals(user.getId());
-        boolean isViceCaptain = false;
-
-        if (!isCaptain) {
-            var member = crewMemberRepository.findByCrewIdAndUserId(post.getCrewId(), user.getId());
-            if (member.isPresent() && "vice_captain".equals(member.get().getRole())) {
-                isViceCaptain = true;
-            }
-        }
-
-        if (!isCaptain && !isViceCaptain) {
+        if (!permissionService.isManager(post.getCrewId(), user.getId())) {
             return ResponseEntity.status(403).body("No permission");
         }
 
