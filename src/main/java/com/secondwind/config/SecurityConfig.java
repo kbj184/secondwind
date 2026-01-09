@@ -138,7 +138,7 @@ public class SecurityConfig {
                                                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
                                                 .permitAll()
                                                 .requestMatchers("/", "/refresh/token", "/emailcheck", "/join",
-                                                                "/login", "/favicon.ico", "/error")
+                                                                "/login", "/favicon.ico", "/error", "/crew/locations")
                                                 .permitAll()
                                                 .anyRequest().authenticated());
 

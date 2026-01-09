@@ -413,6 +413,52 @@ public class CrewController {
         return stats;
     }
 
+    // 크루 활동 지역 정보 조회 (국가 및 지역 목록)
+    @GetMapping("/locations")
+    public java.util.Map<String, Object> getCrewLocations() {
+        List<CrewActivityArea> allAreas = crewActivityAreaRepository.findAll();
+
+        // 국가별로 그룹화
+        java.util.Map<String, java.util.Set<String>> countryRegionsMap = new java.util.LinkedHashMap<>();
+        java.util.Set<String> countries = new java.util.LinkedHashSet<>();
+
+        for (CrewActivityArea area : allAreas) {
+            String country = area.getCountryName();
+            String level1 = area.getAdminLevel1();
+
+            if (country != null && !country.isEmpty()) {
+                countries.add(country);
+
+                if (level1 != null && !level1.isEmpty()) {
+                    countryRegionsMap
+                            .computeIfAbsent(country, k -> new java.util.LinkedHashSet<>())
+                            .add(level1);
+                }
+            }
+        }
+
+        // 각 level1에 대한 level2 목록 생성
+        java.util.Map<String, java.util.Set<String>> regionSubRegionsMap = new java.util.LinkedHashMap<>();
+
+        for (CrewActivityArea area : allAreas) {
+            String level1 = area.getAdminLevel1();
+            String level2 = area.getAdminLevel2();
+
+            if (level1 != null && !level1.isEmpty() && level2 != null && !level2.isEmpty()) {
+                regionSubRegionsMap
+                        .computeIfAbsent(level1, k -> new java.util.LinkedHashSet<>())
+                        .add(level2);
+            }
+        }
+
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("countries", new java.util.ArrayList<>(countries));
+        result.put("countryRegions", countryRegionsMap);
+        result.put("regionSubRegions", regionSubRegionsMap);
+
+        return result;
+    }
+
     // Helper method to convert Crew entity to DTO with activity area info
     private CrewDTO convertToDTO(Crew crew) {
         System.out.println("DEBUG: convertToDTO called for crew ID: " + crew.getId());
