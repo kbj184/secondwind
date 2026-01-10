@@ -70,6 +70,9 @@ public class RunningSession {
     @Column(name = "course_completed", nullable = false)
     private Boolean courseCompleted = false;
 
+    @Column(name = "is_bookmarked", nullable = false)
+    private Boolean isBookmarked = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -35,4 +35,7 @@ public interface RunningSessionRepository extends JpaRepository<RunningSession, 
 
     // 특정 코스의 따라 달리기 기록 조회
     List<RunningSession> findByCourseIdAndUserIdOrderByCreatedAtDesc(Long courseId, Long userId);
+
+    // 즐겨찾기된 세션 조회
+    List<RunningSession> findByUserIdAndIsBookmarkedTrueOrderByCreatedAtDesc(Long userId);
 }

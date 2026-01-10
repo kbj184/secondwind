@@ -65,6 +65,9 @@ public class RunningController {
             session.setThumbnail(dto.getThumbnail());
             session.setCourseId(dto.getCourseId());
             session.setCourseCompleted(dto.getCourseCompleted() != null ? dto.getCourseCompleted() : false);
+            if (dto.getIsBookmarked() != null) {
+                session.setIsBookmarked(dto.getIsBookmarked());
+            }
 
             // 저장
             RunningSession saved = runningSessionRepository.save(session);
@@ -245,6 +248,55 @@ public class RunningController {
         }
     }
 
+    /**
+     * 즐겨찾기 토글
+     */
+    @PostMapping("/session/{sessionId}/bookmark")
+    public ResponseEntity<?> toggleBookmark(@PathVariable String sessionId) {
+        try {
+            RunningSession session = runningSessionRepository
+                    .findBySessionId(sessionId)
+                    .orElse(null);
+
+            if (session == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            session.setIsBookmarked(!session.getIsBookmarked());
+            RunningSession saved = runningSessionRepository.save(session);
+
+            System.out.println(
+                    "⭐ Bookmark toggled for session: " + sessionId + " (Now: " + saved.getIsBookmarked() + ")");
+
+            return ResponseEntity.ok(convertToDTO(saved));
+
+        } catch (Exception e) {
+            System.err.println("❌ Error toggling bookmark: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 즐겨찾기된 세션만 조회
+     */
+    @GetMapping("/sessions/bookmarked")
+    public ResponseEntity<List<RunningSessionDTO>> getBookmarkedSessions(@RequestParam Long userId) {
+        try {
+            List<RunningSession> sessions = runningSessionRepository
+                    .findByUserIdAndIsBookmarkedTrueOrderByCreatedAtDesc(userId);
+
+            List<RunningSessionDTO> dtos = sessions.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching bookmarked sessions: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // Entity -> DTO 변환
     private RunningSessionDTO convertToDTO(RunningSession session) {
         RunningSessionDTO dto = new RunningSessionDTO();
@@ -265,6 +317,7 @@ public class RunningController {
         dto.setThumbnail(session.getThumbnail());
         dto.setCourseId(session.getCourseId());
         dto.setCourseCompleted(session.getCourseCompleted());
+        dto.setIsBookmarked(session.getIsBookmarked());
 
         // createdAt을 timestamp(epoch milliseconds)로 변환
         if (session.getCreatedAt() != null) {

@@ -22,4 +22,5 @@ public class RunningSessionDTO {
     private String thumbnail; // 썸네일 URL 추가
     private Long courseId; // 따라 달리기 코스 ID
     private Boolean courseCompleted; // 코스 완주 여부
+    private Boolean isBookmarked; // 즐겨찾기 여부
 }
