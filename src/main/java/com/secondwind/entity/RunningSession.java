@@ -73,6 +73,9 @@ public class RunningSession {
     @Column(name = "is_bookmarked", nullable = false)
     private Boolean isBookmarked = false;
 
+    @Column(name = "course_type", length = 20)
+    private String courseType; // CREW, RETRY, FRIEND, CHALLENGE, CUSTOM 등
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

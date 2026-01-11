@@ -68,6 +68,9 @@ public class RunningController {
             if (dto.getIsBookmarked() != null) {
                 session.setIsBookmarked(dto.getIsBookmarked());
             }
+            if (dto.getCourseType() != null) {
+                session.setCourseType(dto.getCourseType());
+            }
 
             // 저장
             RunningSession saved = runningSessionRepository.save(session);
@@ -318,6 +321,7 @@ public class RunningController {
         dto.setCourseId(session.getCourseId());
         dto.setCourseCompleted(session.getCourseCompleted());
         dto.setIsBookmarked(session.getIsBookmarked());
+        dto.setCourseType(session.getCourseType());
 
         // createdAt을 timestamp(epoch milliseconds)로 변환
         if (session.getCreatedAt() != null) {
