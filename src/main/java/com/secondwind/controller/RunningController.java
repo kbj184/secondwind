@@ -19,11 +19,17 @@ public class RunningController {
 
     private final RunningSessionRepository runningSessionRepository;
     private final RunnerGradeService runnerGradeService;
+    private final com.secondwind.repository.CrewCourseRepository crewCourseRepository;
+    private final com.secondwind.repository.UserRepository userRepository;
 
     public RunningController(RunningSessionRepository runningSessionRepository,
-            RunnerGradeService runnerGradeService) {
+            RunnerGradeService runnerGradeService,
+            com.secondwind.repository.CrewCourseRepository crewCourseRepository,
+            com.secondwind.repository.UserRepository userRepository) {
         this.runningSessionRepository = runningSessionRepository;
         this.runnerGradeService = runnerGradeService;
+        this.crewCourseRepository = crewCourseRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -296,6 +302,38 @@ public class RunningController {
 
         } catch (Exception e) {
             System.err.println("❌ Error fetching bookmarked sessions: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    /**
+     * 특정 코스의 상세 정보 조회
+     */
+    @GetMapping("/course/{courseId}")
+    public ResponseEntity<?> getCourseDetails(@PathVariable Long courseId) {
+        try {
+            return crewCourseRepository.findById(courseId)
+                    .map(course -> {
+                        com.secondwind.dto.CrewCourseDTO dto = new com.secondwind.dto.CrewCourseDTO();
+                        dto.setId(course.getId());
+                        dto.setCrewId(course.getCrewId());
+                        dto.setName(course.getName());
+                        dto.setTitle(course.getTitle());
+                        dto.setDescription(course.getDescription());
+                        dto.setDistance(course.getDistance());
+                        dto.setRouteData(course.getRouteData());
+                        dto.setMapThumbnailUrl(course.getMapThumbnailUrl());
+                        dto.setIsOfficial(course.getIsOfficial());
+
+                        // 작성자 정보
+                        userRepository.findById(course.getUserId().longValue()).ifPresent(u -> {
+                            dto.setCreatorNickname(u.getNickname());
+                        });
+
+                        return ResponseEntity.ok(dto);
+                    })
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
